@@ -1,0 +1,20 @@
+[project]
+name = "deglacer"
+version = "0.1.0"
+description = "Claude Code JSONL session parser — shared library for batterie de savoir"
+requires-python = ">=3.11"
+license = "MIT"
+
+[dependency-groups]
+dev = ["pytest"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/deglacer"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
