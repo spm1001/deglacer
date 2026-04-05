@@ -4,6 +4,10 @@ Extracts structured conversation data from CC session files,
 handling compaction, deduplication, and system tag stripping.
 """
 
+from importlib.metadata import version as _version
+
+__version__ = _version("deglacer")
+
 from deglacer.parsing import parse_session, is_human_message, is_tool_result, is_meta
 from deglacer.content import extract_human_text, extract_assistant_content
 from deglacer.conversation import merge_assistant_entries, build_turns, format_text, format_json
