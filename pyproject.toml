@@ -8,6 +8,9 @@ license = "MIT"
 [dependency-groups]
 dev = ["pytest"]
 
+[project.scripts]
+deglacer = "deglacer.cli:main"
+
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
