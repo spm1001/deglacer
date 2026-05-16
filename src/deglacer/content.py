@@ -3,7 +3,7 @@
 import re
 
 
-# System XML tags injected by CC that should be stripped from human messages
+# System XML tags injected by CC that should be stripped entirely from human messages
 _SYSTEM_TAG_PATTERNS = [
     re.compile(r'<command-message>.*?</command-message>\s*', re.DOTALL),
     re.compile(r'<command-name>.*?</command-name>\s*', re.DOTALL),
@@ -11,14 +11,22 @@ _SYSTEM_TAG_PATTERNS = [
     re.compile(r'<system-reminder>.*?</system-reminder>\s*', re.DOTALL),
 ]
 
+# Tags whose inner text IS the user's intent — unwrap (keep contents, drop tags).
+# <command-args> wraps the actual prompt text the user passed to a slash command.
+_UNWRAP_TAG_PATTERNS = [
+    (re.compile(r'<command-args>(.*?)</command-args>\s*', re.DOTALL), r'\1'),
+]
+
 
 def extract_human_text(entry: dict) -> str:
-    """Extract text from a human message, stripping system tags."""
+    """Extract text from a human message, stripping system tags and unwrapping arg tags."""
     content = entry.get('message', {}).get('content', '')
     if not isinstance(content, str):
         return ''
     for pattern in _SYSTEM_TAG_PATTERNS:
         content = pattern.sub('', content)
+    for pattern, replacement in _UNWRAP_TAG_PATTERNS:
+        content = pattern.sub(replacement, content)
     return content.strip()
 
 

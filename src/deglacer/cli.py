@@ -6,6 +6,7 @@ Usage:
     deglacer --with-thinking SESSION.jsonl  # include thinking blocks
     deglacer --last 5 SESSION.jsonl         # last 5 turns only
     deglacer --json SESSION.jsonl           # structured JSON output
+    deglacer --markdown SESSION.jsonl       # claude.ai-export-style markdown
     deglacer --stats SESSION.jsonl          # session statistics
     deglacer --summary SESSION.jsonl        # human messages only
     deglacer --timeline SESSION.jsonl       # timestamped turn log
@@ -33,6 +34,7 @@ def main():
     parser.add_argument("--with-thinking", action="store_true", help="Include thinking blocks")
     parser.add_argument("--last", type=int, metavar="N", help="Last N turns only")
     parser.add_argument("--json", action="store_true", dest="json_output", help="JSON output")
+    parser.add_argument("--markdown", action="store_true", help="Claude.ai-export-style markdown (suggested filename to stderr)")
     parser.add_argument("--stats", action="store_true", help="Session statistics")
     parser.add_argument("--summary", action="store_true", help="Human messages only (what was discussed)")
     parser.add_argument("--timeline", action="store_true", help="Timestamped turn log")
@@ -108,6 +110,14 @@ def main():
         print(deglacer.format_summary(entries))
     elif args.timeline:
         print(deglacer.format_timeline(entries))
+    elif args.markdown:
+        md, suggested = deglacer.format_markdown(
+            entries,
+            with_thinking=args.with_thinking,
+            last_n=args.last,
+        )
+        print(md)
+        print(f"Suggested filename: {suggested}", file=sys.stderr)
     elif args.json_output:
         turns = deglacer.build_turns(
             entries,
