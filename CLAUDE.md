@@ -35,3 +35,5 @@ Everything is re-exported from `__init__.py` — consumers just `import deglacer
 ## What's new (v0.3.0)
 
 - `--markdown` mode produces claude.ai-export-format files: frontmatter (title, date, source, uuid, message_count, tools_used), H1 title, alternating `## You · ts` / `## Claude · ts` bubbles, tool calls inline-collapsed with emoji markers (`🔧 Bash`, `📄 Read`, `🌐 Fetched`…). Suggested filename printed to stderr so `deglacer --markdown … > sample.md` is the natural pattern. Built for the cornichon persona-forge dataset, but generally useful for any corpus that mixes CC and claude.ai conversations.
+
+Work is tracked on a bon board in `.bon/` — read `.bon/README.md` before reading or changing anything there.
