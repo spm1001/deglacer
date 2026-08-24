@@ -22,9 +22,48 @@ import sys
 from datetime import datetime
 
 import deglacer
+from deglacer import _invlog
 
 
 def main():
+    """Entry point: invocation logging around the real main.
+
+    Every invocation — success and failure alike — appends one caller-stamped
+    JSONL line via the vendored shim (src/deglacer/_invlog.py; canonical copy
+    and cross-estate conformance test live in spm1001/harness-ergonomics).
+    Logging is best-effort: a broken log path never breaks the CLI (erg-tebapi).
+    """
+    with _invlog.capture("deglacer", deglacer.__version__) as inv:
+        _main(inv)
+
+
+def _mode(args) -> str:
+    """The dispatch branch _main() will take, tested in dispatch order.
+
+    deglacer has no subcommands — its modes are flags — so this derived mode
+    is what goes in the log's subcommand field. A null there would gut
+    per-mode analysis, which is the whole point of the field.
+    """
+    if args.recent is not None:
+        return "recent"
+    if args.since and not args.find and not args.file:
+        return "since"
+    if args.find:
+        return "find"
+    if args.stats:
+        return "stats"
+    if args.summary:
+        return "summary"
+    if args.timeline:
+        return "timeline"
+    if args.markdown:
+        return "markdown"
+    if args.json_output:
+        return "json"
+    return "text"
+
+
+def _main(inv):
     parser = argparse.ArgumentParser(
         prog="deglacer",
         description="Extract conversation from Claude Code session JSONL files.",
@@ -53,6 +92,10 @@ def main():
         args.since = datetime.now().strftime("%Y-%m-%d")
         if args.recent is None:
             args.recent = 100
+
+    # Note post-normalisation (after the --today sugar), so the logged mode
+    # matches the branch actually dispatched below.
+    inv.note(subcommand=_mode(args), parsed=args)
 
     # List recent sessions
     if args.recent is not None:
