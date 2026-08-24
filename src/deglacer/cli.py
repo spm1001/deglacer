@@ -38,11 +38,14 @@ def main():
 
 
 def _mode(args) -> str:
-    """The dispatch branch _main() will take, tested in dispatch order.
+    """The REQUESTED mode, tested in dispatch order.
 
     deglacer has no subcommands — its modes are flags — so this derived mode
     is what goes in the log's subcommand field. A null there would gut
-    per-mode analysis, which is the whole point of the field.
+    per-mode analysis, which is the whole point of the field. On error paths
+    (e.g. --stats with no file) the logged mode is what was asked for, not
+    the help-and-exit branch actually taken; outcome=error carries the rest —
+    and the conformance test depends on exactly that reading.
     """
     if args.recent is not None:
         return "recent"

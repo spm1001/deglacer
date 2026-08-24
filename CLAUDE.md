@@ -21,6 +21,7 @@ deglacer --help                                    # CLI usage
 | `stats` | Token/model/tool counting, timeline, summary |
 | `discovery` | Session file finding and cross-session search |
 | `cli` | argparse entry point — wired via `[project.scripts]` in pyproject |
+| `_invlog` | Vendored estate invocation-log shim — every CLI run appends one caller-stamped JSONL line to `~/.local/share/deglacer/invocations.jsonl`, subcommand field carrying the dispatch-order mode. Never edit here; re-vendor from canonical (spm1001/harness-ergonomics, which holds the conformance test) |
 
 Everything is re-exported from `__init__.py` — consumers just `import deglacer`.
 
