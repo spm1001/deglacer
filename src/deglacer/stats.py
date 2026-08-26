@@ -2,7 +2,7 @@
 
 from collections import Counter
 
-from deglacer.parsing import is_human_message
+from deglacer.parsing import billing_lane, is_human_message
 from deglacer.content import extract_human_text
 from deglacer.conversation import merge_assistant_entries
 
@@ -37,6 +37,16 @@ def format_stats(entries: list[dict]) -> str:
 
     human_count = sum(1 for e in entries if is_human_message(e))
     assistant_merged = merge_assistant_entries(entries)
+
+    # Which provider billed each request. Keyed by requestId rather than counted
+    # per entry, because CC streams one response across several entries — so this
+    # is a count of API requests, not of transcript lines.
+    lane_of_request = {}
+    for entry in entries:
+        lane = billing_lane(entry)
+        if lane:
+            lane_of_request[entry['requestId']] = lane
+    lanes = Counter(lane_of_request.values())
 
     timestamps = [e.get('timestamp') for e in entries if e.get('timestamp')]
     first = timestamps[0] if timestamps else '?'
@@ -75,6 +85,11 @@ def format_stats(entries: list[dict]) -> str:
     ])
     for m, c in models.most_common():
         lines.append(f'  {m:40s} {c:5d}')
+
+    if lanes:
+        lines.extend([f'', f'Billing lane (API requests):'])
+        for lane, c in lanes.most_common():
+            lines.append(f'  {lane:40s} {c:5d}')
 
     lines.extend([
         f'',

@@ -60,3 +60,47 @@ def test_format_summary():
     assert '2 messages' in output
     assert 'What is deglacer?' in output
     assert 'Tell me about the kitchen metaphor' in output
+
+
+def _assistant(request_id, message_id, model="claude-opus-5"):
+    return {"type": "assistant", "requestId": request_id,
+            "message": {"id": message_id, "model": model, "content": [], "usage": {}}}
+
+
+def test_stats_reports_the_billing_lane():
+    output = format_stats([
+        _assistant("req_vrtx_a", "msg_1"),
+        _assistant("req_b", "msg_2"),
+    ])
+    assert 'Billing lane' in output
+    assert 'vertex' in output
+    assert 'other' in output
+
+
+def test_stats_counts_requests_not_transcript_lines():
+    """CC streams one response across several entries sharing a requestId.
+    Counting entries would report three requests where one was made."""
+    streamed = [_assistant("req_vrtx_same", "msg_1") for _ in range(3)]
+    output = format_stats(streamed)
+    lane_line = next(l for l in output.splitlines() if l.strip().startswith('vertex'))
+    assert lane_line.split()[-1] == '1'
+
+
+def test_stats_omits_the_lane_block_when_nothing_can_be_attributed():
+    """A transcript of purely synthetic responses has no requestIds to read;
+    printing an empty section would imply the lane was checked and found absent."""
+    output = format_stats([
+        {"type": "assistant",
+         "message": {"id": "msg_1", "model": "<synthetic>", "content": [], "usage": {}}},
+    ])
+    assert 'Billing lane' not in output
+
+
+def test_stats_lane_and_model_are_independent():
+    """The same model id appears on both lanes — that is why requestId is the handle."""
+    output = format_stats([
+        _assistant("req_vrtx_a", "msg_1", model="claude-opus-5"),
+        _assistant("req_b", "msg_2", model="claude-opus-5"),
+    ])
+    assert 'claude-opus-5' in output
+    assert 'vertex' in output and 'other' in output

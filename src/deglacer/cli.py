@@ -7,7 +7,7 @@ Usage:
     deglacer --last 5 SESSION.jsonl         # last 5 turns only
     deglacer --json SESSION.jsonl           # structured JSON output
     deglacer --markdown SESSION.jsonl       # claude.ai-export-style markdown
-    deglacer --stats SESSION.jsonl          # session statistics
+    deglacer --stats SESSION.jsonl          # session statistics, incl. billing lane
     deglacer --summary SESSION.jsonl        # human messages only
     deglacer --timeline SESSION.jsonl       # timestamped turn log
     deglacer --find "search term"           # search across recent sessions

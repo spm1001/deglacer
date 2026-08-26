@@ -14,7 +14,7 @@ deglacer --help                                    # CLI usage
 
 | Module | Role |
 |--------|------|
-| `parsing` | JSONL loading, entry type classification (`is_human_message`, `is_tool_result`, `is_meta`) |
+| `parsing` | JSONL loading, entry type classification (`is_human_message`, `is_tool_result`, `is_meta`), billing-lane attribution (`billing_lane`) |
 | `content` | System tag stripping, assistant content extraction (text/tools/thinking) |
 | `conversation` | Message.id merging (streaming dragon), turn building, text/JSON formatting |
 | `markdown` | Claude.ai-export-format markdown export (frontmatter + coalesced turns + inline tool markers) |

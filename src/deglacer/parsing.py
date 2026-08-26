@@ -47,3 +47,30 @@ def is_tool_result(entry: dict) -> bool:
 def is_meta(entry: dict) -> bool:
     """True if this is a skill/system injection."""
     return entry.get('type') == 'user' and entry.get('isMeta', False)
+
+
+VERTEX_REQUEST_PREFIX = 'req_vrtx_'
+
+
+def billing_lane(entry: dict) -> str | None:
+    """Which provider served this assistant response — 'vertex' or 'other'.
+
+    Session JSONL records no provider field, and model ids are identical across
+    providers, so `requestId` is the only handle: Vertex stamps `req_vrtx_…`,
+    everything else uses a bare `req_…`. Measured across 6,347 sessions and
+    ~499k assistant entries (2026-08-26): exactly those two shapes, nothing else.
+
+    Returns None when there is no requestId to read — which is not a lane. Local
+    and synthetic responses (`model: "<synthetic>"`) carry none, so absence means
+    "no API request was made", not "some other provider".
+
+    'other' rather than 'anthropic-api' deliberately: this corpus contains no
+    Bedrock or Foundry traffic, so what those stamp is unmeasured. On an estate
+    that uses them, a bare `req_` may not mean the Anthropic API.
+    """
+    if entry.get('type') != 'assistant':
+        return None
+    request_id = entry.get('requestId')
+    if not request_id:
+        return None
+    return 'vertex' if request_id.startswith(VERTEX_REQUEST_PREFIX) else 'other'
