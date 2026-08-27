@@ -96,6 +96,75 @@ def test_stats_omits_the_lane_block_when_nothing_can_be_attributed():
     assert 'Billing lane' not in output
 
 
+def _streamed(request_id, usage, model="claude-opus-5", tool_id=None):
+    content = []
+    if tool_id:
+        content.append({"type": "tool_use", "id": tool_id, "name": "Read",
+                        "input": {"file_path": "/tmp/x"}})
+    return {"type": "assistant", "requestId": request_id,
+            "message": {"id": "msg_1", "model": model,
+                        "content": content, "usage": usage}}
+
+
+def _usage(inp, cache_w, cache_r, out):
+    return {"input_tokens": inp, "cache_creation_input_tokens": cache_w,
+            "cache_read_input_tokens": cache_r, "output_tokens": out}
+
+
+def test_stats_tokens_count_each_request_once():
+    """One API response is written as one entry per content block, each
+    repeating the same usage object. Summing entries overcounted by 128% on a
+    real session (492 entries, 204 requests)."""
+    output = format_stats([
+        _streamed("req_a", _usage(2, 1000, 50_000, 5)),
+        _streamed("req_a", _usage(2, 1000, 50_000, 5)),
+        _streamed("req_a", _usage(2, 1000, 50_000, 499)),
+    ])
+    # one request: input 2 + 1000 + 50,000 = 51,002; output 499 (the final one)
+    assert 'input=51,002' in output
+    assert 'output=499' in output
+
+
+def test_stats_takes_the_whole_usage_row_from_the_max_output_entry():
+    """In the rare group where input and cache move too, they move together
+    with output — so a max output spliced onto another entry's cache figures
+    would undercount. Take the row, not the field."""
+    output = format_stats([
+        _streamed("req_a", _usage(2, 4406, 123_447, 3)),
+        _streamed("req_a", _usage(4, 8907, 251_300, 3262)),
+    ])
+    assert 'input=260,211' in output      # 4 + 8,907 + 251,300
+    assert 'output=3,262' in output
+
+
+def test_stats_counts_models_per_request_not_per_entry():
+    output = format_stats([_streamed("req_a", _usage(1, 0, 0, 1)) for _ in range(3)])
+    model_line = next(l for l in output.splitlines()
+                      if l.strip().startswith('claude-opus-5'))
+    assert model_line.split()[-1] == '1'
+
+
+def test_stats_counts_a_streamed_tool_call_once():
+    output = format_stats([
+        _streamed("req_a", _usage(1, 0, 0, 1), tool_id="toolu_1"),
+        _streamed("req_a", _usage(1, 0, 0, 9), tool_id="toolu_1"),
+    ])
+    tool_line = next(l for l in output.splitlines() if l.strip().startswith('Read'))
+    assert tool_line.split()[-1] == '1'
+
+
+def test_stats_keeps_requests_without_a_request_id_distinct():
+    """Synthetic and local responses carry no requestId. Collapsing them would
+    report one request where several were recorded."""
+    entries = [
+        {"type": "assistant",
+         "message": {"id": f"msg_{i}", "model": "<synthetic>",
+                     "content": [], "usage": _usage(0, 0, 0, 7)}}
+        for i in range(3)
+    ]
+    assert 'output=21' in format_stats(entries)
+
+
 def test_stats_lane_and_model_are_independent():
     """The same model id appears on both lanes — that is why requestId is the handle."""
     output = format_stats([

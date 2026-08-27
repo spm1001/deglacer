@@ -49,6 +49,50 @@ def is_meta(entry: dict) -> bool:
     return entry.get('type') == 'user' and entry.get('isMeta', False)
 
 
+def dedupe_by_request(entries: list[dict]) -> list[dict]:
+    """One assistant entry per API request, for anything that reads `usage`.
+
+    CC writes a single API response as several transcript entries — one per
+    content block — and every one repeats the same `message.usage` object.
+    Summing usage across raw entries therefore double-counts: measured at 128%
+    on session c7b8aa9f (492 assistant entries, 204 requests) and 149% across a
+    30-day corpus.
+
+    Keyed on `requestId`, falling back to `message.id` and then to position, so
+    nothing is dropped for want of a key — synthetic and local responses carry
+    no `requestId` and stay countable as distinct.
+
+    Where a group disagrees, the entry with the highest `output_tokens` wins
+    *whole*. Output grows as the response streams (2,487 of 4,422 multi-entry
+    groups measured 2026-08-27, every one non-decreasing), and in the rare group
+    where the input and cache figures move as well they move together with it —
+    so splicing a maximum output onto another entry's cache figures would
+    undercount. Take the row, not the field.
+
+    Use this for tokens, models and per-request rates. `merge_assistant_entries`
+    answers a different question — it rebuilds conversational *content* by
+    `message.id` — and is not a substitute.
+    """
+    best: dict = {}
+    order: list = []
+
+    for index, entry in enumerate(entries):
+        if entry.get('type') != 'assistant':
+            continue
+        msg = entry.get('message') or {}
+        key = entry.get('requestId') or msg.get('id') or f'#{index}'
+        if key not in best:
+            best[key] = entry
+            order.append(key)
+            continue
+        current = (msg.get('usage') or {}).get('output_tokens') or 0
+        incumbent = ((best[key].get('message') or {}).get('usage') or {})
+        if current > (incumbent.get('output_tokens') or 0):
+            best[key] = entry
+
+    return [best[key] for key in order]
+
+
 VERTEX_REQUEST_PREFIX = 'req_vrtx_'
 
 

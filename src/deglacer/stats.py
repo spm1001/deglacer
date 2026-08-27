@@ -2,7 +2,7 @@
 
 from collections import Counter
 
-from deglacer.parsing import billing_lane, is_human_message
+from deglacer.parsing import billing_lane, dedupe_by_request, is_human_message
 from deglacer.content import extract_human_text
 from deglacer.conversation import merge_assistant_entries
 
@@ -15,25 +15,41 @@ def format_stats(entries: list[dict]) -> str:
     total_input = 0
     total_output = 0
 
-    for entry in entries:
-        if entry.get('type') == 'assistant':
-            msg = entry.get('message', {})
-            m = msg.get('model')
-            if m:
-                models[m] += 1
-            usage = msg.get('usage', {})
-            # input_tokens is only the non-cached portion;
-            # real input = input + cache_creation + cache_read
-            total_input += (
-                usage.get('input_tokens', 0)
-                + usage.get('cache_creation_input_tokens', 0)
-                + usage.get('cache_read_input_tokens', 0)
-            )
-            total_output += usage.get('output_tokens', 0)
+    # Tokens and models are per API request, so they read the deduplicated view:
+    # one transcript entry per content block would otherwise count each response
+    # several times over.
+    for entry in dedupe_by_request(entries):
+        msg = entry.get('message', {})
+        m = msg.get('model')
+        if m:
+            models[m] += 1
+        usage = msg.get('usage', {})
+        # input_tokens is only the non-cached portion;
+        # real input = input + cache_creation + cache_read
+        total_input += (
+            usage.get('input_tokens', 0)
+            + usage.get('cache_creation_input_tokens', 0)
+            + usage.get('cache_read_input_tokens', 0)
+        )
+        total_output += usage.get('output_tokens', 0)
 
-            for block in msg.get('content', []):
-                if isinstance(block, dict) and block.get('type') == 'tool_use':
-                    tools[block.get('name', '?')] += 1
+    # Tool calls are per block, not per request — one response can carry several.
+    # Deduplicated on the tool_use id rather than via merge_assistant_entries,
+    # which drops any entry lacking a message.id. A block with no id is counted
+    # as its own call; collapsing those would hide real calls.
+    seen_tool_ids = set()
+    for entry in entries:
+        if entry.get('type') != 'assistant':
+            continue
+        for block in entry.get('message', {}).get('content', []):
+            if not isinstance(block, dict) or block.get('type') != 'tool_use':
+                continue
+            block_id = block.get('id')
+            if block_id is not None:
+                if block_id in seen_tool_ids:
+                    continue
+                seen_tool_ids.add(block_id)
+            tools[block.get('name', '?')] += 1
 
     human_count = sum(1 for e in entries if is_human_message(e))
     assistant_merged = merge_assistant_entries(entries)
