@@ -8,6 +8,7 @@ Usage:
     deglacer --json SESSION.jsonl           # structured JSON output
     deglacer --markdown SESSION.jsonl       # claude.ai-export-style markdown
     deglacer --stats SESSION.jsonl          # session statistics, incl. billing lane
+    deglacer --doctor SESSION.jsonl         # does the parser still fit the format?
     deglacer --summary SESSION.jsonl        # human messages only
     deglacer --timeline SESSION.jsonl       # timestamped turn log
     deglacer --find "search term"           # search across recent sessions
@@ -53,6 +54,8 @@ def _mode(args) -> str:
         return "since"
     if args.find:
         return "find"
+    if args.doctor:
+        return "doctor"
     if args.stats:
         return "stats"
     if args.summary:
@@ -78,6 +81,11 @@ def _main(inv):
     parser.add_argument("--json", action="store_true", dest="json_output", help="JSON output")
     parser.add_argument("--markdown", action="store_true", help="Claude.ai-export-style markdown (suggested filename to stderr)")
     parser.add_argument("--stats", action="store_true", help="Session statistics")
+    parser.add_argument(
+        "--doctor", action="store_true",
+        help="Parse health: does the parser still fit the format? "
+             "Exits 1 if anything is flagged.",
+    )
     parser.add_argument("--summary", action="store_true", help="Human messages only (what was discussed)")
     parser.add_argument("--timeline", action="store_true", help="Timestamped turn log")
     parser.add_argument(
@@ -145,7 +153,18 @@ def _main(inv):
         print(f"File not found: {args.file}", file=sys.stderr)
         sys.exit(1)
 
-    entries = deglacer.parse_session(args.file)
+    health = deglacer.new_health()
+    entries = deglacer.parse_session(args.file, health=health)
+
+    # --doctor runs before the empty-file guard on purpose: a file that parsed
+    # to nothing is exactly the case it exists to explain, and bailing with
+    # "unparseable" would withhold the line counts that say why.
+    if args.doctor:
+        assessment = deglacer.assess(entries, health)
+        print(deglacer.format_doctor(assessment))
+        flagged = [f for f in deglacer.findings(assessment) if f[0] == "flag"]
+        sys.exit(1 if flagged else 0)
+
     if not entries:
         print("Empty or unparseable file.", file=sys.stderr)
         sys.exit(1)

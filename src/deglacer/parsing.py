@@ -3,21 +3,39 @@
 import json
 
 
-def parse_session(path: str) -> list[dict]:
+def parse_session(path: str, health=None) -> list[dict]:
     """Parse a CC JSONL file into a list of entries.
 
     Handles encoding errors gracefully and skips malformed lines.
+
+    Pass a Counter as `health` to record what was skipped on the way through —
+    lines, blank, bad_json, not_object. Skipping is the right behaviour (one
+    truncated write should not lose a whole transcript) but it is silent, and
+    silence is what lets a drifted format look like a clean parse. The counter
+    is optional so the return type never changes; `deglacer.health.assess`
+    turns it into findings.
     """
     entries = []
     with open(path, 'r', errors='replace') as f:
         for line in f:
+            if health is not None:
+                health['lines'] += 1
             line = line.strip()
             if not line:
+                if health is not None:
+                    health['blank'] += 1
                 continue
             try:
-                entries.append(json.loads(line))
+                entry = json.loads(line)
             except json.JSONDecodeError:
+                if health is not None:
+                    health['bad_json'] += 1
                 continue
+            if not isinstance(entry, dict):
+                if health is not None:
+                    health['not_object'] += 1
+                continue
+            entries.append(entry)
     return entries
 
 

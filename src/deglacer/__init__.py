@@ -8,7 +8,11 @@ from importlib.metadata import version as _version
 
 __version__ = _version("deglacer")
 
-from deglacer.parsing import parse_session, is_human_message, is_tool_result, is_meta, billing_lane
+from deglacer.parsing import (
+    parse_session, is_human_message, is_tool_result, is_meta, billing_lane,
+    dedupe_by_request,
+)
+from deglacer.health import new_health, assess, findings, format_doctor
 from deglacer.content import extract_human_text, extract_assistant_content
 from deglacer.conversation import merge_assistant_entries, build_turns, format_text, format_json
 from deglacer.stats import format_stats, format_timeline, format_summary
@@ -21,6 +25,11 @@ __all__ = [
     "is_tool_result",
     "is_meta",
     "billing_lane",
+    "dedupe_by_request",
+    "new_health",
+    "assess",
+    "findings",
+    "format_doctor",
     "extract_human_text",
     "extract_assistant_content",
     "merge_assistant_entries",
