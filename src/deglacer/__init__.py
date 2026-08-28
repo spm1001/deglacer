@@ -13,6 +13,7 @@ from deglacer.parsing import (
     dedupe_by_request,
 )
 from deglacer.health import new_health, assess, findings, format_doctor
+from deglacer.tools import normalize_tool, bash_command, tool_calls
 from deglacer.content import extract_human_text, extract_assistant_content
 from deglacer.conversation import merge_assistant_entries, build_turns, format_text, format_json
 from deglacer.stats import format_stats, format_timeline, format_summary
@@ -30,6 +31,9 @@ __all__ = [
     "assess",
     "findings",
     "format_doctor",
+    "normalize_tool",
+    "bash_command",
+    "tool_calls",
     "extract_human_text",
     "extract_assistant_content",
     "merge_assistant_entries",

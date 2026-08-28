@@ -9,6 +9,7 @@ Usage:
     deglacer --markdown SESSION.jsonl       # claude.ai-export-style markdown
     deglacer --stats SESSION.jsonl          # session statistics, incl. billing lane
     deglacer --doctor SESSION.jsonl         # does the parser still fit the format?
+    deglacer --stats --tools SESSION.jsonl  # + which file/command/host each call went to
     deglacer --summary SESSION.jsonl        # human messages only
     deglacer --timeline SESSION.jsonl       # timestamped turn log
     deglacer --find "search term"           # search across recent sessions
@@ -81,6 +82,10 @@ def _main(inv):
     parser.add_argument("--json", action="store_true", dest="json_output", help="JSON output")
     parser.add_argument("--markdown", action="store_true", help="Claude.ai-export-style markdown (suggested filename to stderr)")
     parser.add_argument("--stats", action="store_true", help="Session statistics")
+    parser.add_argument(
+        "--tools", action="store_true",
+        help="With --stats: break tool counts down by file, command or host",
+    )
     parser.add_argument(
         "--doctor", action="store_true",
         help="Parse health: does the parser still fit the format? "
@@ -170,7 +175,7 @@ def _main(inv):
         sys.exit(1)
 
     if args.stats:
-        print(deglacer.format_stats(entries))
+        print(deglacer.format_stats(entries, with_details=args.tools))
     elif args.summary:
         print(deglacer.format_summary(entries))
     elif args.timeline:

@@ -5,13 +5,23 @@ from collections import Counter
 from deglacer.parsing import billing_lane, dedupe_by_request, is_human_message
 from deglacer.content import extract_human_text
 from deglacer.conversation import merge_assistant_entries
+from deglacer.tools import tool_calls
+
+# Deep enough to show the shape of a session's tool use without turning the
+# stats block into a log. `--tools` prints the full ranking.
+TOP_DETAILS = 10
 
 
-def format_stats(entries: list[dict]) -> str:
-    """Session statistics — tokens, models, tools, timing."""
+def format_stats(entries: list[dict], with_details: bool = False) -> str:
+    """Session statistics — tokens, models, tools, timing.
+
+    `with_details` adds the second axis: which file, command or host each
+    label's calls actually went to.
+    """
     types = Counter(e.get('type') for e in entries)
     models = Counter()
     tools = Counter()
+    details = Counter()
     total_input = 0
     total_output = 0
 
@@ -33,23 +43,15 @@ def format_stats(entries: list[dict]) -> str:
         )
         total_output += usage.get('output_tokens', 0)
 
-    # Tool calls are per block, not per request — one response can carry several.
-    # Deduplicated on the tool_use id rather than via merge_assistant_entries,
-    # which drops any entry lacking a message.id. A block with no id is counted
-    # as its own call; collapsing those would hide real calls.
-    seen_tool_ids = set()
-    for entry in entries:
-        if entry.get('type') != 'assistant':
-            continue
-        for block in entry.get('message', {}).get('content', []):
-            if not isinstance(block, dict) or block.get('type') != 'tool_use':
-                continue
-            block_id = block.get('id')
-            if block_id is not None:
-                if block_id in seen_tool_ids:
-                    continue
-                seen_tool_ids.add(block_id)
-            tools[block.get('name', '?')] += 1
+    # Tool calls are per block, not per request — one response can carry
+    # several. Labelled rather than counted raw: `Bash` alone is one
+    # undifferentiated bucket, and the second axis (which command, which file)
+    # is what makes the count answer anything.
+    calls = tool_calls(entries)
+    for label, detail in calls:
+        tools[label] += 1
+        if detail:
+            details[(label, detail)] += 1
 
     human_count = sum(1 for e in entries if is_human_message(e))
     assistant_merged = merge_assistant_entries(entries)
@@ -114,7 +116,21 @@ def format_stats(entries: list[dict]) -> str:
         f'Tool usage:',
     ])
     for t, c in tools.most_common():
-        lines.append(f'  {t:20s} {c:5d}')
+        lines.append(f'  {t:28s} {c:5d}')
+
+    if with_details and details:
+        lines.extend(['', 'What those calls went to:'])
+        for label, _ in tools.most_common():
+            rows = [((lb, d), c) for (lb, d), c in details.most_common()
+                    if lb == label]
+            if not rows:
+                continue
+            lines.append(f'  {label}')
+            for (_, detail), count in rows[:TOP_DETAILS]:
+                lines.append(f'    {count:5d}  {detail}')
+            if len(rows) > TOP_DETAILS:
+                remaining = sum(c for _, c in rows[TOP_DETAILS:])
+                lines.append(f'    {remaining:5d}  … {len(rows) - TOP_DETAILS} more')
 
     return '\n'.join(lines)
 
