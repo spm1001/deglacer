@@ -1,0 +1,400 @@
+# 605 jq programs run against CC transcripts by Claudes on tube, 2026-07-01..2026-09-13.
+# Extracted by sweep-tool-calls.py; one line per distinct program, prefixed by its count.
+# This is dgc-mahula's acceptance oracle: each shape's real command, to be replayed against
+# a real transcript so the deglacer equivalent can be asserted to print the SAME VALUES.
+# 605 total, 394 distinct, from 87 sessions.
+
+  38	.type
+  23	select(.timestamp) | .timestamp
+  15	select(.cwd) | .cwd
+  13	select(.type=="assistant") | .message.model
+  11	select(.type=="system") | .subtype
+   8	select(.timestamp)|.timestamp
+   7	select(.version) | .version
+   7	select(.type=="user" and (.message.content|type)=="string") | .message.content
+   7	select(.type=="user" and (.message.content|type)=="string" and (.isMeta|not)) | .message.content
+   7	select(.type=="ai-title") | .aiTitle
+   6	select(.type=="attachment") | .attachment.type
+   6	select(.entrypoint) | .entrypoint
+   5	select(.type == "assistant") | [.message.content[]? | select(.type == "text") | .text] | join("\n")
+   5	select(.type=="assistant") | [.message.content[]? | select(.type=="text") | .text] | select(length>0) | join(" ")
+   4	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use" and .name=="Bash") | .input.command
+   4	select(.type == "assistant") | [.message.content[]? | select(.type == "text") | .text] | select(length > 0) | join("\n")
+   4	select(.slug) | .slug
+   4	.[].content
+   3	select(.type == "user" and .permissionMode) | [.timestamp, .permissionMode] | @tsv
+   3	select(.type=="assistant") | .message.usage
+   3	select(.type=="system" and .subtype=="model_refusal_fallback")
+   3	select(.type=="assistant") | [.message.content[]? | select(.type=="text") | .text] | join(" ")
+   3	select(.type=="assistant") | .requestId // empty
+   3	select(.type == "user" and (.message.content | type) == "string" and (.isMeta | not)) | .message.content
+   3	select(.type=="assistant") | .message.id
+   3	.timestamp // empty
+   3	select(.type=="permission-mode") | .permissionMode
+   3	select(.type=="assistant") | [.message.content[]?|select(.type=="text")|.text] | select(length>0) | join("\n")
+   3	select(.type=="started") | .key
+   3	select(.type=="assistant") | [.timestamp, .message.model] | @tsv
+   2	select(.type == "user" and .permissionMode) | [.timestamp, .permissionMode, .entrypoint // "?"] | @tsv
+   2	select(.type=="attachment" and .attachment.type=="hook_success" and (.attachment.stdout // "" | test("goûteur"))) | "\(.timestamp) | \(.attachment.hookEvent) | \(.attachment.stdout | .[0:150])"
+   2	select(tostring | test("goûteur")) | .type + " / " + (.attachment.type // "-")
+   2	select(.type=="attachment" and .attachment.type=="hook_additional_context") | .attachment | [keys[]]
+   2	select(.type=="attachment" and .attachment.type=="hook_additional_context") | select(tostring|test("goûteur")) | "\(.timestamp)\nEVENT=\(.attachment.hookEvent // "?")\n\(.attachment | tostring | .[0:400])"
+   2	select(.type=="assistant") | .message.usage | keys[]
+   2	select(.message.id=="msg_vrtx_011Ceb1UQZdASq7KP5H1B8X4") | {t:.timestamp, u:.message.usage}
+   2	select(.type=="user") | .message.content[]? | select(.type=="tool_result") | .content | if type=="array" then .[].text? else . end
+   2	select(.toolUseResult.agentType? == "claude-code-guide") | .toolUseResult.content | if type == "array" then .[] | select(.type == "text") | .text else . end
+   2	select(.toolUseResult.agentType?) | .toolUseResult.agentType
+   2	select(.type=="system" and .subtype=="api_error") | {ts:.timestamp, status:.error.status, retryInMs, retryAttempt}
+   2	select(.type=="assistant") | [.message.content[]? | select(.type=="text") | .text] | select(length>0) | join("\n")
+   2	[.[]|select(.timestamp)|.timestamp]|(min,max)
+   2	select(.type=="assistant") | .message.stop_reason // "null"
+   2	select(.type == "assistant") | .message.content[]? | select(.type == "tool_use" and .name == "Bash") | .input.command | select(test("e1_pilot"))
+   2	select(.type=="assistant") | {model: .message.model, version, entrypoint}
+   2	select(.type=="summary") | .summary
+   2	select(.type=="custom-title")
+   2	select(.type=="last-prompt")
+   2	.timestamp
+   2	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use") | .id
+   2	.version // empty
+   2	select(.slug)|.slug
+   2	select(tostring | contains("HANDOFF=")) | {type, at: (.attachment.type // null), meta: (.isMeta // null)}
+   2	.brief.why
+   2	select(.type=="custom-title" or .type=="ai-title") | .type
+   2	select(.type=="assistant") | .message.content[]? | select(.type=="text") | .text
+   2	.results[] | select(.content.type=="page") | "\(.content.id) | \(.resultGlobalContainer.displayUrl) | \(.title) | \(.lastModified[:10])"
+   2	with_entries(.value |= (if type=="string" then .[:300] else . end))
+   2	keys | join(",")
+   2	select(.type=="bridge-session")
+   1	select(.type == "user" and .permissionMode) | .permissionMode
+   1	select(.type == "user" and (.message.content | type) == "string" and (.isMeta | not)) | {ts: .timestamp, pm: (.permissionMode // "FIELD-ABSENT"), keys: (keys | join(","))}
+   1	select(.type=="user" and (.message.content|type)=="string" and (.isMeta|not) and (.message.content | test("prewalk"; "i"))) | .timestamp + " | " + .message.content
+   1	select(.type=="assistant") | [.message.content[]? | select(.type=="text") | .text] | join("\n") | select(test("no by contract"))
+   1	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use" and (.name=="Agent" or .name=="Task")) | .input.description + " | " + (.input.prompt[:180] // "")
+   1	select(.type=="user" and (.message.content|type)=="string" and (.isMeta|not) and (.message.content | test("are we sure"; "i"))) | .timestamp + " | " + .message.content[:300]
+   1	{model: .model, usage: (.usage // .tokens // empty)}
+   1	keys
+   1	.. | objects | select(has("input_tokens") or has("inputTokens"))
+   1	select(.usage != null) | {phase: (.phase // .name // .type), agents: (.usage.agent_count // .usage.agentCount), total: (.usage.total_tokens // .usage.totalTokens // .usage)}
+   1	select(.type=="assistant") | select(((.message.id//"")|startswith("msg_vrtx_")) or ((.requestId//"")|startswith("req_vrtx_"))) | [.isSidechain, .sessionId] | @tsv
+   1	select(.message.model=="<synthetic>") | {type, id:.message.id, requestId, usage:.message.usage, t:.timestamp}
+   1	select(.type=="assistant") | [.timestamp, (.message.id//"noid"), (.message.model//"?"), (.message.usage.cache_read_input_tokens//0), (.message.usage.cache_creation_input_tokens//0)] | @tsv
+   1	select(.type=="assistant") | select(((.message.id//"")|startswith("msg_vrtx_")) or ((.requestId//"")|startswith("req_vrtx_"))) | select(.timestamp|startswith("2026-08-28")) | .message.id
+   1	select(.type=="assistant") | select(((.message.id//"")|startswith("msg_vrtx_")) or ((.requestId//"")|startswith("req_vrtx_"))) | .message.usage | [(.input_tokens//0),(.cache_creation_input_tokens//0),(.cache_read_input_tokens//0),(.output_tokens//0)] | @tsv
+   1	select(.type=="assistant") | select(((.message.id//"")|startswith("msg_vrtx_")) or ((.requestId//"")|startswith("req_vrtx_"))) | .message.id
+   1	select(.isCompactSummary==true) | .timestamp
+   1	select(.type=="assistant") | [.timestamp, (.message.id//"noid"), (.message.usage.cache_read_input_tokens//0), (.message.usage.cache_creation_input_tokens//0), (.message.usage.input_tokens//0)] | @tsv
+   1	select(.type=="attachment") | select(.attachment.hookEvent=="SessionStart") | [.attachment.hookName // "?", (.attachment.command // "?"), (.attachment.stdout // "" | .[0:300])] | @json
+   1	select(.type=="attachment") | select(.attachment.hookEvent=="SessionStart") | select(.attachment.command // "" | contains("notes-check")) | .attachment | {hookName, status: (.status // "n/a"), exitCode: (.exitCode // "n/a"), stdout} | @json
+   1	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use") | select((.input.file_path // .input.command // "" | tostring) | test("campaign-open-20260831-2249|kizazo-fan-output")) | {tool: .name, ts: null, arg: ((.input.file_path // .input.command) | tostring | .[:100])}
+   1	select(.type=="assistant") | select([.message.content[]? | select(.type=="tool_use") | ((.input.file_path // "") | tostring)] | any(test("campaign-open-20260831-2249.md|kizazo-fan-output-20260831-2249"))) | .timestamp + " " + ([.message.content[]? | select(.type=="tool_use") | .name + ":" + ((.input.file_path // "")|tostring)] | join(" | "))
+   1	{sessionId, slug}
+   1	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use") | ((.input.file_path // .input.command // "")|tostring) | select(test("coaching|sameer-todoist"; "i")) | .[:120]
+   1	select(.type=="attachment" and .attachment.type=="hook_success" and .attachment.hookEvent=="SessionStart") | "=== \(.attachment.command // "?") (exit \(.attachment.exitCode))\n\(.attachment.stdout)"
+   1	select(.type=="assistant") | select(((.message.id//"")|startswith("msg_vrtx_")) or ((.requestId//"")|startswith("req_vrtx_"))) | (.message.model//"") | select(. != "" and . != "<synthetic>")
+   1	select((.message.model//"")=="<synthetic>") | {id:(.message.id//"none"), req:(.requestId//"none")[0:9], u:((.message.usage//{})|(.input_tokens//0)+(.cache_creation_input_tokens//0)+(.cache_read_input_tokens//0)+(.output_tokens//0))}
+   1	.projects | keys
+   1	select(.type=="user") | .message.content
+   1	.message.content[]? | select(.type=="tool_use" and .name=="Skill") | {id, skill: .input.skill}
+   1	{subtype: .subtype, content: (.content // .message.content // "?" | tostring | .[0:120])}
+   1	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use") | .name
+   1	.message.content // .content // .
+   1	.content
+   1	select(.type=="assistant") | {o:(.message.usage.output_tokens//0), i:((.message.usage.input_tokens//0)+(.message.usage.cache_creation_input_tokens//0)+(.message.usage.cache_read_input_tokens//0)), m:.message.model}
+   1	{subagents_turns:length, out_total:(map(.o)|add), in_total:(map(.i)|add), models:(map(.m)|unique)}
+   1	select(.toolUseResult.stdout != null) | .toolUseResult.stdout
+   1	select(.type=="user" and (.message.content|type)=="string" and (.isMeta|not)) | "[\(.timestamp)] \(.message.content)"
+   1	select(.type=="assistant" and .message.model=="<synthetic>") | "[\(.timestamp)] \(.message.content[0].text // .message.content)"
+   1	select(.type=="summary")
+   1	"[\(.timestamp // "-")] \(.type)/\(.subtype // .attachment.type // "") :: \((.message.content | if type=="string" then . elif type=="array" then (.[0].text // .[0].type) else "" end) // .summary // .content // "" | tostring)"
+   1	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use" and (.name=="Write" or .name=="Edit")) | "\(.name)\t\(.input.file_path)"
+   1	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use") | select(.name=="Edit" or .name=="Write" or .name=="Bash") | "\(.name) :: \(.input.file_path // .input.command // "" | tostring | .[0:120])"
+   1	select(.type=="ai-title" or .type=="custom-title" or .type=="agent-name") | "\(.type): \(.aiTitle // .customTitle // .agentName // "")"
+   1	.[] | select(.content | test("notes"; "i")) | "\(.priority)|\(.content)"
+   1	.[] | select(.priority == 4) | .content
+   1	length
+   1	select(.type=="assistant")
+   1	select(.type=="user" and (.message.content|type)=="array") | .message.content[] | select(.type=="tool_result") | keys | join(",")
+   1	select(.type=="user" and (.message.content|type)=="array") | .message.content[] | select(.type=="tool_result") | .is_error // "absent" | tostring
+   1	select(.type == "user" and (.message.content | type) == "string" and (.isMeta | not) and (.message.content | test("80k|80,000|next year"; "i"))) | "— " + .timestamp + "\n" + .message.content + "\n"
+   1	select(.type=="attachment") | .attachment.type // "NOSUBTYPE"
+   1	select(.type=="attachment") | select((.|tostring)|test("CLAUDE.md")) | .attachment.type
+   1	select(.type=="attachment" and .attachment.type=="nested_memory") | {keys:(.attachment|keys), path:(.attachment.path // .attachment.file // null), ts:.timestamp}
+   1	select(.type=="attachment" and .attachment.type=="nested_memory") | (.attachment.path // .attachment.content.path // "?")
+   1	{slug, sessionId}
+   1	.timestamp // "n/a"
+   1	select(.type == "assistant") | .message.content[]? | select(.type == "tool_use") | select(.name | test("mise"; "i")) | select((.input.operation? // "") | test("draft")) | select((.input | tostring) | test("martyn|audienceproject|bentley"; "i")) | @json
+   1	select(.type == "user" and .toolUseResult) | .message.content[]? | select(.type == "tool_result") | select(.tool_use_id == "toolu_vrtx_01BbjYXSYCLPwYiLkvtrgjXN") | (.content | tostring)
+   1	select(.type == "assistant") | .message.model // "unknown"
+   1	select(.type=="assistant") | keys | join(",")
+   1	select(.type == "assistant") | [(.timestamp[:10] // "nodate"), (.message.id // "noid"), (.message.model // "unknown"), (.message.usage.input_tokens // 0), (.message.usage.cache_creation_input_tokens // 0), (.message.usage.cache_read_input_tokens // 0), (.message.usage.output_tokens // 0), (.message.usage.cache_creation.ephemeral_1h_input_tokens // 0)] | @tsv
+   1	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use" and .name=="Skill") | select((.input.skill // "") | test("mit-setup")) | "SKILL"
+   1	select(.type=="system" and .subtype=="local_command") | .content // ""
+   1	{sessionId, slug, version, ts: .timestamp} | select(.sessionId)
+   1	select(.type=="assistant") | .message | [.id, (.usage.input_tokens//0), (.usage.cache_creation_input_tokens//0), (.usage.cache_read_input_tokens//0), (.usage.output_tokens//0)] | @tsv
+   1	.label // .agentLabel // (.|tostring|.[:80])
+   1	select(.type=="user" and .permissionMode and (.isMeta|not)) | select(.message.content|type=="string") | "\(.timestamp[11:16]) >>> \(.message.content[0:700]|gsub("\n";" "))"
+   1	select(.type=="user") | .message.content | if type=="string" then .[0:70] else .[0].text[0:70] end
+   1	select(.type == "assistant") | [.message.content[]? | select(.type == "tool_use") | .name] | .[]
+   1	.[] | select(.content | test("mit-plongeur|pca-tojede|carnet-hedubi|sb-rikipi")) | "\(.id) | \(.content)"
+   1	.[] | select(.content | test("meeting note starts itself|unsorted files")) | "\(.id) | \(.section_id // "root") | \(.content)"
+   1	.[] | select(.content | test("Reopen the bench|changelog behind Garni|Redesign in ITV colours|Cull the 10|mit-dev App Engine|Gcp LDC|Look at OP|Thariq|delegated projects")) | "\(.id) | \(.content[:80])"
+   1	select(.type=="result") | .label // .agentLabel // "?"
+   1	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use") | select(.input | tostring | test("within a percent")) | .name
+   1	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use") | select(.input | tostring | test("within a percent")) | if .name=="Write" then "=== WRITE: " + .input.file_path else "=== AGENT PROMPT (" + (.input.description // "") + ")" end
+   1	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use") | select(.name=="Agent") | select(.input | tostring | test("within a percent")) | .input.description + "\n---PROMPT-START---\n" + .input.prompt + "\n---PROMPT-END---\n"
+   1	select(.timestamp and ((.message.content // "") | tostring | test("notes-tecora"))) | "\(.timestamp) \(.type) \(.isMeta // false)"
+   1	select(.timestamp == "2026-08-16T21:35:53.789Z" or .timestamp == "2026-08-16T21:37:37.135Z") | {ts: .timestamp, type, isHook: ((.message.content | tostring) | test("user-prompt-submit-hook")), isToolResult: (.toolUseResult != null), preview: ((.message.content | tostring)[0:250])}
+   1	select(.timestamp == "2026-08-16T21:39:41.376Z") | [.message.content[]? | select(.type=="text") | .text] | join(" ")
+   1	select(.type=="assistant" and ((.message.content | tostring) | test("21:04"))) | .timestamp
+   1	select(.type=="assistant" and ((.message.content | tostring) | test("21:04"))) | [.message.content[]? | select(.type=="text") | .text] | join(" ")
+   1	{created_at, created_by, parent}
+   1	.outcomes[].title
+   1	select(.type=="saved_hook_context")|.timestamp
+   1	select(.isMeta==true or .type=="system") | (.message.content[]?.text // .content // "")
+   1	select(.type=="assistant") | .requestId
+   1	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use") | "\(.name): \((.input.command // .input.file_path // .input.prompt // "") | tostring | .[0:110])"
+   1	select(.timestamp) | select(.timestamp >= "2026-08-28T11:18" and .timestamp <= "2026-08-28T11:25") | [.timestamp, .type, (.message.content[]? | select(.type=="tool_use") | .name + ": " + (.input.command // .input.file_path // "" | tostring)[:120])] | @tsv
+   1	select(.type=="assistant") | .timestamp
+   1	select(.type=="cost-state") | { totalCostUSD, totalDurationMin: ((.totalDuration/60000)|floor), apiDurationMin: ((.totalAPIDuration/60000)|floor), linesAdded: .totalLinesAdded, linesRemoved: .totalLinesRemoved, hasUnknownModelCost, models: (.modelUsage|keys) }
+   1	select(.type == "user" and .permissionMode and (.isMeta | not)) | .message.content
+   1	select(.type=="last-prompt") | (.prompt // .content // .text // empty)
+   1	select(.type=="user" and .toolUseResult.type=="text" and .toolUseResult.file) | {ingested_msg_bytes: ([.message.content[]?|select(.type=="tool_result")|(.content|if type=="string" then . else tojson end)]|join("")|length), bookkeeping_file_bytes: (.toolUseResult.file|tojson|length)}
+   1	select(.type=="user" and .permissionMode and (.isMeta|not)) | .timestamp
+   1	select(.type=="user" and .permissionMode and (.isMeta|not)) | "### " + .timestamp + "\n" + .message.content
+   1	select(.type=="assistant" and .timestamp < "2026-08-26T11:55") | .message.content[]? | select(.type=="tool_use") | .name
+   1	select(.type=="assistant" and .timestamp < "2026-08-26T11:55") | .message.content[]? | select(.type=="tool_use") | select(.name | test("mise|Skill")) | .name + " :: " + (.input | tostring | .[0:160])
+   1	select(.type=="assistant" and .timestamp < "2026-08-26T11:55") | .message.content[]? | select(.type=="tool_use" and .name=="Bash") | .input.command
+   1	select(.type=="assistant") | .version as $v | .timestamp as $t | (.message.content[]? | select(.type=="tool_use") | select(.name|test("mise";"i")) | "\(.name)\t\($v)\t\($t[0:10])")
+   1	select(.type=="assistant") | .sessionId as $s | .version as $v | .timestamp as $t | (.message.content[]? | select(.type=="tool_use") | select(.name|startswith("mcp__mise__")) | select($t>="2026-03-18") | "\($t)\t\($v)\t\(.name)\t\(.id)\t\($s)")
+   1	select(.type=="assistant" and .timestamp>="2026-07-27T21:37:39Z") | .timestamp as $t | (.message.content[]? | select(.type=="tool_use") | "\($t) \(.name) \(.input|tostring|.[0:110])")
+   1	select(.type=="assistant")|.timestamp as $t|select($t>="2026-07-19T09:40" and $t<="2026-07-19T11:00")|(.message.content[]?|select(.type=="tool_use" and .name=="Bash")|.input.command)|select(test("oauth|setup_oauth|python -m auth|3000|mise|consent|token|DISPLAY|xdg|browser|account";"i"))|"\($t)\n \(.[0:200])\n"
+   1	select(.type=="assistant")|.timestamp as $t|select($t<="2026-07-19T09:47")|(.message.content[]?|select(.type=="tool_use")|{n:.name,c:(.input.command//.input.operation//"")})|select(.c|test("setup_oauth|python -m auth|DISPLAY|xdg-open|accounts.google|:3000|oauth";"i"))|"\($t) \(.n): \(.c[0:130])"
+   1	select(.type=="system") | {subtype, err: .error.status?, retry: .retryAttempt?}
+   1	select(.type=="assistant" and .message.stop_reason=="end_turn") | [.message.content[]? | select(.type=="text") | .text] | join(" ") | .[-190:]
+   1	select(.type=="system" and .subtype=="api_error") | .error.status
+   1	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use" and .name=="Skill") | {id, name, input}
+   1	.type + " | " + (if .message.content|type == "string" then "string-content" else ([.message.content[]?.type] | join(",")) end)
+   1	.toolUseResult | type
+   1	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use" and .name=="Bash") | select(.input.command | test("wrangler")) | {id: .id, timeout: .input.timeout, cmd: (.input.command | .[0:180])}
+   1	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use" and .name=="Bash") | select(.input.command | test("git push|git commit")) | {id: .id, cmd: (.input.command | .[0:100])}
+   1	select(.type=="assistant") | select([.message.content[]? | select(.type=="tool_use" and (.input.command // "" | test("FIXTURE-03 && uv run")))] | length>0) | {use_ts: .timestamp}
+   1	select(.type=="user" and (.toolUseResult|type)=="string") | {res_ts: .timestamp, s: .toolUseResult[0:60]}
+   1	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use" and .name=="Bash" and (.input.command // "" | test("wrangler"))) | {id: .id[0:24], cmd: (.input.command | .[0:110])}
+   1	select(.type=="assistant") | .ts=.timestamp | . as $e | .message.content[]? | select(.type=="tool_use") | [$e.timestamp, .name, ((.input.command // .input.file_path // .input.prompt // "" ) | gsub("\n";" ")| .[0:110])] | @tsv
+   1	select(.type=="assistant") | . as $e | .message.content[]? | select(.type=="tool_use" and .name=="Bash") | select($e.timestamp >= "2026-08-24T04:30:02" and $e.timestamp <= "2026-08-24T05:31") | "=== " + $e.timestamp + " id=" + .id + "\nCMD: " + (.input.command | .[0:600])
+   1	select(.timestamp? and .timestamp > "2026-08-24T04:30:12" and .timestamp < "2026-08-24T05:29:30") | {ts:.timestamp, type, sub:(.subtype // .attachment.type // ""), keys:(if .type=="progress" then [.data|keys[]?] else [] end)}
+   1	select(.timestamp? and .timestamp >= "2026-08-24T05:29:20" and .timestamp < "2026-08-24T05:29:21") | .type + " | " + ((.message.content | if type=="string" then . else tostring end) | .[0:800])
+   1	select(.type=="attachment") | {ts:.timestamp, at:.attachment.type, hook:(.attachment.hookName // ""), out:((.attachment.stdout // "")|.[0:200])}
+   1	select(.permissionMode) | .permissionMode
+   1	select(.type=="assistant") | . as $e | [.message.content[]? | select(.type=="text") | .text] | join(" ") | select(test("wrangler"; "i")) | "[" + $e.timestamp + "] " + (.[0:400])
+   1	select(.type=="assistant") | . as $e | .message.content[]? | select(.type=="tool_use") | select((.name=="Bash" and (.input.command | test("send-keys|Escape"; "i"))) or .name=="TaskStop") | "[" + $e.timestamp + "] " + .name + ": " + ((.input.command // (.input|tostring)) | gsub("\n";" ") | .[0:250])
+   1	select(.type=="assistant") | . as $e | .message.content[]? | select(.type=="tool_use" and .name=="Bash") | select(.input.command | test("wrangler (deploy|secret|tail)")) | $e.timestamp + " " + .id + " " + (.input.command | gsub("\n";" ") | .[0:70])
+   1	select(.type=="assistant") | . as $e | .message.content[]? | select(.type=="tool_use" and .name=="Bash") | select(.input.command | test("wrangler deploy --dry")) | $e.timestamp + " id=" + .id + "\n" + .input.command
+   1	select(.type=="user") | select([.message.content[]? | select(.type=="tool_result" and .tool_use_id=="toolu_vrtx_01AvYZr8wzW3Kon9xxPhNS8q")]|length>0) | {ts:.timestamp, res:(.toolUseResult | if type=="string" then .[0:200] else {interrupted, stdout:(.stdout//""|.[0:400])} end)}
+   1	select(.type=="user" and (.message.content|type)=="string") | .message.content | .[0:300]
+   1	.type + " | " + (.timestamp // "") + " | " + ((.message.content // .toolUseResult // "") | tostring | .[0:200])
+   1	select(.type=="permission-mode")
+   1	{type, sessionId, slug, version, cwd, gitBranch, permissionMode, entrypoint}
+   1	select(.type=="user" and (.toolUseResult|type)=="string") | {ts:.timestamp, result:(.toolUseResult|.[0:120]), tuid:(.message.content[0].tool_use_id)}
+   1	select(.type=="attachment") | {ts:.timestamp, atype:.attachment.type}
+   1	select(.type=="assistant") | .timestamp as $ts | .message.content[]? | select(.type=="tool_use" and .id=="toolu_vrtx_01U8XjeyVoE8LxS7yP8RfcVi") | {ts:$ts, name, input}
+   1	select(.type=="user" and (.message.content[0].tool_use_id?=="toolu_vrtx_01U8XjeyVoE8LxS7yP8RfcVi"))
+   1	select(.type=="assistant" and .timestamp > "2026-08-24T01:33:01") | .timestamp as $ts | .message.content[]? | select(.type=="tool_use" and .name=="Bash") | {ts:$ts, cmd:(.input.command|.[0:200])}
+   1	select(.type=="attachment" and .attachment.type=="command_permissions") | {ts:.timestamp, att:.attachment}
+   1	select(.type=="system" and .subtype=="scheduled_task_fire") | .timestamp
+   1	select(.timestamp? and .timestamp > "2026-08-24T01:31" and .timestamp < "2026-08-24T01:35") | {ts:.timestamp, type, sub:.subtype, atype:.attachment.type?}
+   1	select(.type=="assistant" and .timestamp > "2026-08-24T01:29" and .timestamp < "2026-08-24T01:34:30") | .timestamp as $ts | .message.content[]? | if .type=="tool_use" then {ts:$ts, tool:.name, input:(.input|tostring|.[0:250])} elif .type=="text" then {ts:$ts, text:(.text|.[0:250])} else empty end
+   1	select(.type=="assistant") | .timestamp as $ts | .message.content[]? | select(.type=="tool_use" and .name=="Bash") | {ts:$ts, id:.id, cmd:(.input.command|.[0:120])}
+   1	select(.type=="user" and .toolUseResult?) | {ts:.timestamp, kind:(.toolUseResult|type), snippet:(if (.toolUseResult|type)=="string" then .toolUseResult[0:60] else (.toolUseResult.stdout|.[0:40]) end)}
+   1	select(.type=="user" and .toolUseResult?) | {ts:.timestamp, kind:(.toolUseResult|type), out:(if (.toolUseResult|type)=="object" then (.toolUseResult.stdout|.[0:40]) else (.toolUseResult|.[0:40]) end)}
+   1	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use" and .id=="toolu_vrtx_01U8XjeyVoE8LxS7yP8RfcVi") | {id, name, input}
+   1	select(.type=="user") | .message.content[]? as $c | select($c.type=="tool_result" and $c.tool_use_id=="toolu_vrtx_01U8XjeyVoE8LxS7yP8RfcVi") | {ts: .timestamp, result: (.toolUseResult|tostring|.[0:200])}
+   1	select(.type=="assistant") | select([.message.content[]? | select(.type=="tool_use" and .id=="toolu_vrtx_01U8XjeyVoE8LxS7yP8RfcVi")] | length > 0) | {ts: .timestamp}
+   1	select(.type=="attachment" and .attachment.type=="command_permissions") | {ts: .timestamp, a: (.attachment|tostring|.[0:300])}
+   1	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use" and (.name|test("Cron"))) | {name, input}
+   1	select(.type=="user" and .toolUseResult) | .message.content[]? | select(.type=="tool_result") | .content | if type=="array" then .[].text? // empty else . end
+   1	.timestamp // "none"
+   1	.sessionId // "none"
+   1	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use" and .name=="Bash" and (.input.command|tostring|contains("cron-proof2"))) | "BASH"
+   1	select(.type=="custom-title" or .type=="summary") | .customTitle // .title // .summary
+   1	select(.type=="system" and .subtype=="api_error") | {ts:.timestamp, status:.error.status, msg:(.error.message // .error.error.message // .content // "" | tostring | .[0:160])}
+   1	select(.type=="system" and .subtype=="api_error") | [keys]
+   1	select(.isApiErrorMessage==true) | {ts:.timestamp, sid:.sessionId, cwd, entrypoint, error, apiErrorStatus, requestId, model:.message.model, quotaLimits, errorDetails, t:([.message.content[]? | select(.type=="text") | .text] | join(" ") | .[0:300])}
+   1	.sessionId
+   1	select(.type=="user" and (.message.content|type)=="string") | {ts:.timestamp, pm:.permissionMode, c:(.message.content|.[0:120])}
+   1	select(.type=="user" and (.message.content|type)=="string" and (.timestamp|startswith("2026-08-23T23:26"))) | [keys[]]
+   1	select(.type=="user" and (.message.content|type)=="string" and (.timestamp|startswith("2026-08-23T23:28"))) | [keys[]]
+   1	select(.type=="user" and (.message.content|type)=="string" and (.timestamp|startswith("2026-08-23T23:26"))) | .message.content
+   1	select(.type=="assistant") | .timestamp as $ts | .message.content[]? | select(.type=="tool_use") | {ts:$ts, tool:.name}
+   1	select(.timestamp and (.timestamp > "2026-08-23T23:37:10")) | {ts:.timestamp, type:.type, ps:.promptSource}
+   1	select(.timestamp and (.timestamp > "2026-08-23T23:37:30")) | {ts:.timestamp, type:.type}
+   1	.sessionId, .cwd
+   1	select(.cwd) | [.cwd, .entrypoint, .slug] | @tsv
+   1	select(.type=="attachment" and .attachment.type=="goal_status") | {ts:.timestamp, met:.attachment.met, cond:(.attachment.condition|.[0:60])}
+   1	select(.type=="assistant") | .timestamp as $ts | .message.content[]? | select(.type=="tool_use") | {ts:$ts, tool:.name, target:(.input.file_path // .input.command // "" | .[0:80])}
+   1	select(.type=="queue-operation") | {ts:.timestamp, op:.operation, content:(.content // .prompt // "" | tostring | .[0:120])}
+   1	select(.type=="assistant") | .timestamp as $ts | .message.content[]? | select(.type=="tool_use" and .name=="Bash") | select(.input.command | test("sha256sum|HUMAN REVIEW")) | {ts:$ts, cmd:(.input.command|.[0:130])}
+   1	select(.type=="assistant") | .timestamp as $ts | .message.content[]? | select(.type=="tool_use" and .name=="Bash") | select(.input.command | test("sha256sum|HUMAN REVIEW")) | {ts:$ts, cmd:(.input.command|.[0:160])}
+   1	to_entries | .[0].key
+   1	select(tostring | contains("HANDOFF=")) | {type, subtype: (.subtype // null), isMeta: (.isMeta // null), uuid: (.uuid[0:8] // null), ts: (.timestamp // null), keys: (keys | join(","))}
+   1	select(.type=="attachment" and (tostring | contains("HANDOFF="))) | .attachment | keys | join(",")
+   1	select(.type=="attachment" and (tostring | contains("HANDOFF="))) | .attachment | .. | strings
+   1	select(tostring | contains("Last session (")) | {type, at: (.attachment.type // null), meta: (.isMeta // null)}
+   1	select(.type=="attachment" and .attachment.type=="hook_success") | .attachment.stdout
+   1	select(.type=="assistant" and .message.model=="claude-fable-5-1") | {ts:.timestamp, rid:.requestId, u:.message.usage}
+   1	select(.type=="user") | keys_unsorted
+   1	select(.type=="assistant") | keys_unsorted
+   1	{type, ts:.timestamp, version, entrypoint, slug, cwd, permissionMode}
+   1	{type, ts: .timestamp, subtype: .subtype?}
+   1	.[] | "\(.content)"
+   1	[.timestamp // "no-ts", .type, (.message.content[0].name // .message.content[0].type // (.toolUseResult|type) // "-")] | join(" ")
+   1	[.timestamp // "no-ts", .type] | join(" ")
+   1	[.timestamp // "no-ts", .type, (.message.content[0].name // .message.content[0].type // "-")] | join(" ")
+   1	{sessionId, slug, version} | tostring
+   1	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use") | select(.name | test("mise";"i")) | .name + " " + (.input | tostring | .[0:180])
+   1	{type, isMeta, has_tur: (.toolUseResult != null), tuid: (.message.content[0].tool_use_id // null)} | tostring
+   1	.message.content[0].content
+   1	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use") | select(.name | test("mise")) | select(.name | test("do")) | (.input.operation // "?") + " " + (.input | tostring | .[0:150])
+   1	select(.isSidechain==true) | .type
+   1	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use" and .name=="Bash") | .id
+   1	select(.type=="user") | .message.content[]? | select(.type=="tool_result") | select((.content|tostring) | contains("DENIED this call")) | {tool_use_id, is_error, snippet: ((.content|tostring)[0:180])}
+   1	{sessionId, slug, version, entrypoint, isSidechain, type}
+   1	select(.type=="user") | select((.toolUseResult|type)=="string") | {t:.timestamp, r:(.toolUseResult[0:100])}
+   1	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use" and .id=="toolu_01UPHU3QZY4FLWDvETRkT7sa") | .input.command
+   1	select(.type=="user" or .type=="assistant") | {entrypoint, version}
+   1	select(.type=="user" and (.message.content|type)=="array") | [.message.content[]? | select(.type=="text") | .text] | join("\n")
+   1	{ts:.timestamp, cwd:.cwd, version:.version}
+   1	select(.type=="attachment" and .attachment.type=="hook_success") | "--- hook: " + (.attachment.hookName // "?") + "\n" + ((.attachment.hookOutput // .attachment.output // (.attachment|tostring))|tostring)
+   1	select(.type=="attachment" and .attachment.hookEvent=="SessionStart") | .attachment.stdout // ""
+   1	select(.type=="attachment" and .attachment.hookEvent=="SessionStart") | select(.attachment.stdout // "" | contains("Last session"))
+   1	select(.type=="attachment" and .attachment.hookEvent=="SessionStart") | .attachment.stdout
+   1	{type, timestamp}
+   1	select(.type=="user" and (.message.content|type)=="string") | del(.message) | with_entries(select(.key!="uuid" and .key!="parentUuid" and .key!="timestamp" and .key!="promptId"))
+   1	select(.timestamp > "2026-09-09T06:30:00Z") | {type, ts: .timestamp, ep: .entrypoint, sub: .subtype, at: .attachment.type, model: .message.model}
+   1	select(.sessionId=="d5da1616-2202-5f52-99bd-5f072c7b39bf" or .sessionId=="b73bf1a2-5805-403b-95e2-20f9b6f10053") | {pid, sessionId, entrypoint, status, bridgeSessionId}
+   1	{tmux, status, statusUpdatedAt, bridgeSessionId}
+   1	select(.type=="assistant" and .timestamp > "2026-09-09T06:50:00Z") | .message.content[]? | select(.type=="text") | .text
+   1	select(.type=="user" and (.message.content|type)=="string" and .promptSource=="typed") | .message.content
+   1	select(.type=="user" and (.message.content|type)=="string" and (.isMeta|not)) | "\(.timestamp[11:16]) \(.promptSource) \(.message.content[0:60])"
+   1	select(.type=="last-prompt") | .lastPrompt[0:60]
+   1	select(.type=="summary") | .summary[0:80]
+   1	select(.sessionId=="d5da1616-2202-5f52-99bd-5f072c7b39bf") | {pid,bridgeSessionId,status,entrypoint}
+   1	select(.sessionId=="b73bf1a2-5805-403b-95e2-20f9b6f10053") | {pid,bridgeSessionId,status,entrypoint}
+   1	select(.sessionId)|.sessionId
+   1	select(.type=="custom-title")|.title // .customTitle // "-"
+   1	select(.type=="last-prompt") | (.prompt // .text // .content // tostring)
+   1	select(.type=="assistant")|.message.content[]?|select(.type=="tool_use")|.name
+   1	select(.type=="queue-operation") | {ts: .timestamp, op: (.operation // .op // "?"), text: ((.prompt // .content // .text // "") | tostring | .[0:90])}
+   1	select(.type=="user" or .type=="assistant") | [keys[]] | @json
+   1	select(.entrypoint)|.entrypoint
+   1	select(.origin)|.origin
+   1	select(.type=="bridge-session")|.bridgeSessionId
+   1	select(.type=="user" and (.message.content|type)=="string" and (.message.content|test("it was the refresh"))) | .timestamp
+   1	select(.type=="assistant" and .requestId) | {r:.requestId, u:.message.usage}
+   1	.cqlQuery, .totalSize, (.results[] | "\(.content.id) | \(.resultGlobalContainer.displayUrl) | \(.title) | \(.lastModified[:10]) | \(.excerpt | gsub("\n";" ") | .[:220])")
+   1	.[0].text | fromjson | .totalSize, (.results[] | select(.content.type=="page") | "\(.content.id) | \(.resultGlobalContainer.displayUrl) | \(.title) | \(.lastModified[:10])")
+   1	.issues[]? | "\(.key) | \(.fields.status.name) | \(.fields.updated[:10]) | \(.fields.summary)"
+   1	.issues[] | "\(.key) | \(.fields.status.name) | \(.fields.updated[:10]) | \(.fields.summary)"
+   1	.totalSize, (.results[] | select(.content.type=="page") | "\(.content.id) | \(.resultGlobalContainer.displayUrl) | \(.title) | \(.lastModified[:10]) | \(.excerpt | gsub("\n";" ") | .[:160])")
+   1	select(.type == "user" and .permissionMode and (.isMeta | not)) | select(.message.content | type == "string") | "[" + .timestamp + "] " + (.message.content | .[0:300])
+   1	select(.sessionId) | {sessionId, slug, cwd, ts: .timestamp} | tostring
+   1	select(.type == "user" and .permissionMode and (.isMeta | not)) | select(.message.content | type == "string") | .message.content | tojson
+   1	select(.cwd) | [.cwd, .gitBranch, .version] | @tsv
+   1	select(.type == "user" and .permissionMode and (.isMeta | not)) | select(.message.content | type == "string") | "[" + (.timestamp|.[11:19]) + "] " + (.message.content | gsub("\n"; " ") | .[0:200])
+   1	select(.type == "assistant") | [.message.content[]? | select(.type=="text") | .text] | select(length>0) | join("")
+   1	{t: .type, label: (.label // .agentLabel // null), ts: .timestamp, msg: (.message // null)}
+   1	.label // .agentLabel // "?"
+   1	.timestamp // "?"
+   1	(.message.content[0].text // .message.content[0].type // .type)[:40]
+   1	select(.type=="system" or .error != null or (.message.content[0].text? // "" | test("interrupted|error|limit|refus"; "i"))) | {ts: .timestamp, type, sub: (.subtype // null), level: (.level // null), text: ((.content // .message.content[0].text // .error // "") | tostring | .[:200])}
+   1	(.message.content[0].text // "live")[:12]
+   1	"in=\(.input_tokens) cc=\(.cache_creation_input_tokens // 0) cr=\(.cache_read_input_tokens // 0) total=\((.input_tokens // 0)+(.cache_creation_input_tokens // 0)+(.cache_read_input_tokens // 0))"
+   1	(.message.content[0].text // "live/other")[:12]
+   1	"total=\((.input_tokens // 0)+(.cache_creation_input_tokens // 0)+(.cache_read_input_tokens // 0))"
+   1	with_entries(.value |= (tostring | .[:160]))
+   1	with_entries(.value |= (tostring | .[:120]))
+   1	select(.type=="result") | .result | {unit, travelled: (.travelled|length), stayed: (.stayed|length), unread: (.unread_remainder|length), scripts: .script_paths, kg_check: (.kg_check[:120]), ctx: .context_note[:100], sameer_call: (.sameer_call|length), surprises: (.surprises|length)}
+   1	"\(.timestamp[11:19]) \((.message.content[0].text // .message.content[0].type // .type)[:40])"
+   1	.message.content[0].text // ""
+   1	" last \(.timestamp[11:19]) \((.message.content[0].text // .message.content[0].type // .type)[:30])"
+   1	first(.[] | select(.timestamp)) .timestamp, (last(.[] | select(.timestamp)) .timestamp)
+   1	{type, sessionId, timestamp, permissionMode, operation} | with_entries(select(.value != null))
+   1	select(.type=="user" or .type=="assistant") | keys | join(",")
+   1	select(.isApiErrorMessage == true) | {timestamp, apiErrorStatus, error, msg: (.message.content | if type=="array" then .[0].text[0:200] else tostring[0:200] end)}
+   1	select(.type=="user" and has("origin")) | {timestamp, origin, promptSource}
+   1	[.entrypoint, .userType, .version] | @tsv
+   1	select(.type=="user" and .permissionMode and (.isMeta|not) and (.message.content|type=="string")) | "\(.timestamp) \(.message.content[0:180])"
+   1	select(.type=="user" and .permissionMode and (.isMeta|not) and ((.message.content|type)=="string")) | "[\(.timestamp)]\n\(.message.content)\n"
+   1	select(.type=="user" and .permissionMode and ((.isMeta|not)) and (.message.content|type=="string")) | .timestamp + " " + (.message.content|tostring)
+   1	select(.type=="user" and (.message.content|type=="string")) | .message.content
+   1	select(.type=="user" and .toolUseResult!=null) | select((.message.content | type=="array") and (.message.content[]?.tool_use_id=="toolu_vrtx_01155LiAUvipmemb6Uy8Loez")) | .toolUseResult | if type=="object" then keys else . end
+   1	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use" and .name=="Agent") | "=== BRIEF (\(.input.description)):\n\(.input.prompt[0:900])"
+   1	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use" and .name=="Agent" and .id=="toolu_01QkrhLLFLkSR4xbSaAE6CD4") | .input.prompt
+   1	select(.type=="assistant") | .message.content[]? | select(.type=="tool_use" and .name=="Skill") | .input.skill
+   1	select(.type=="system" and .subtype=="api_error") | .error.message // .error.status // "api_error"
+   1	{type, sub:.subtype, last_text:(.message.content[:1][0].text[:120]? // null)}
+   1	select(.type=="assistant" and .message.model!=null) | .message.model
+   1	select(.type=="assistant") | .message.model // empty
+   1	{env: (.env // "ABSENT"), hookNames: ((.hooks // {}) | keys), model: (.model // "ABSENT")}
+   1	{env: (.env // "ABSENT"), hookNames: ((.hooks // {}) | keys)}
+   1	.hooks.SessionEnd // empty | tostring
+   1	select(.type=="assistant") | {model:.message.model, route:(if (.message.id|startswith("msg_vrtx_")) then "ITV Vertex" else "subscription" end)}
+   1	select(.type=="system" and .subtype=="api_error") | {status: (.error.status // "?"), t: (.timestamp // "?")[0:16]}
+   1	.message.content[]? | select(.type=="tool_use") | select(.name=="Write" or .name=="Edit") | [.id, .input.file_path] | @tsv
+   1	select(.type=="ai-title" or .type=="custom-title" or .type=="agent-name" or .type=="summary" or .type=="bridge-session" or .type=="last-prompt") | del(.leafUuid)
+   1	select(.type=="user" and (.message.content|type)=="string" and (.isMeta|not)) | "[" + (.timestamp // "?") + "] " + (.message.content | gsub("\n"; " ") | .[0:600])
+   1	select(.type=="user" and (.message.content|type)=="string" and (.isMeta|not)) | select(.timestamp > "2026-08-28") | "[" + (.timestamp // "?") + "] " + (.message.content | gsub("\n"; " ") | .[0:800])
+   1	select(.timestamp) | .timestamp[0:10]
+   1	select(.type=="user" and (.message.content|type)=="string" and (.isMeta|not)) | "[" + (.timestamp // "?") + "] " + (.message.content | gsub("\n"; " ") | .[0:500])
+   1	select(.timestamp and (.timestamp[0:10]=="2026-08-26" or .timestamp[0:10]=="2026-08-27")) | .timestamp + " " + .type + " " + (if .type=="user" and (.message.content|type)=="string" then (.message.content|gsub("\n";" ")|.[0:700]) elif .type=="assistant" then ([.message.content[]?|select(.type=="text")|.text]|join(" ")|gsub("\n";" ")|.[0:300]) else (.subtype // .attachment.type // "") end)
+   1	select(.type=="user" and (.message.content|type)=="string" and (.isMeta|not)) | "=== [" + (.timestamp // "?") + "]\n" + .message.content
+   1	select(.type=="user" and (.message.content|type)=="string" and (.isMeta|not)) | select(.message.content | test("task-notification|local-command|command-name") | not) | "=== [" + (.timestamp // "?") + "]\n" + (.message.content | .[0:1500])
+   1	select(.type=="queue-operation") | (.timestamp // "?") + " | " + ((.content // .prompt // .operation // "") | tostring | gsub("\n";" ") | .[0:400])
+   1	select(.type=="user" and (.message.content|type)=="string" and (.isMeta|not) and .timestamp=="2026-08-25T18:00:29.914Z") | .message.content
+   1	select(.type=="assistant" and .timestamp and (.timestamp|startswith("2026-08-27T14:12"))) | [.message.content[]?|select(.type=="text")|.text]|join(" ")
+   1	select(.sessionId) | {sessionId, slug, version, cwd, gitBranch, entrypoint}
+   1	select(tostring | test("No projectId was given")) | {type, subtype: (.subtype // "-"), ts: (.timestamp // "-")}
+   1	select(.type=="assistant") | .message.content[]?.text // empty
+   1	select(.type=="user") | (.message.content | if type=="string" then . else (.[]?.text // "[non-text]") end)
+   1	select(.type=="mode" or .type=="permission-mode" or .type=="last-prompt")
+   1	select(.type=="last-prompt") | .prompt // .lastPrompt // (.|tostring)
+   1	select(.type=="assistant") | [(.message.model//"-"), (if (.requestId//"")|startswith("req_vrtx_") then "vertex" else (if (.requestId//"")=="" then "none" else "other" end) end)] | @tsv
+   1	select(.type=="user" and .permissionMode) | .permissionMode
+   1	select(.cwd) | "\(.cwd) | \(.version) | \(.entrypoint // "-")"
+   1	select(.type=="user" and .permissionMode and (.isMeta|not) and (.message.content|type)=="string") | .message.content
+   1	select(.type=="user" and (.message.content|type)=="string" and (.isMeta|not)) | .timestamp + " " + (.message.content|.[0:120])
+   1	select(.session_id) | .session_id
+   1	{type, sessionId, slug, version}
+   1	{line:
+   1	[.message.content[]? | select(.type=="text" or .type=="thinking") | (.text // .thinking)] | join("\n---\n")
+   1	[.message.content[]? | select(.type=="tool_use") | {tool: .name, path: .input.file_path, keys: (.input | keys)}]
+   1	{type, subtype: .subtype?, ts: .timestamp?}
+   1	[.message.content[]? | select(.type=="tool_use") | .input.command // empty] | join("\n")
+   1	select(.type=="assistant") | [.timestamp, .version // "?", .entrypoint // "?", .message.model] | @tsv
+   1	select(.type=="assistant") | select([.message.content[]? | select(.type=="tool_use" and .name=="Artifact")] | length > 0) | .message.model
+   1	select(.type=="assistant") | [.timestamp, .version // "?"] | @tsv
+   1	select(.type=="agent_result") | .label // .id
+   1	{type: (.type // "?"), label: (.label // .agentLabel // ""), status: (.status // ""), keys: (keys | join(","))}
+   1	select(.type=="result") | .result | "== LINE \(.line_n) → \(.verdict | ascii_upcase)\nitems: \([.items[] | "\(.id) \(.status) badly=\(.has_badly) cryst=\(.crystallisation)"] | join(" · "))\nreasons: \(.reasons)\nstaleness: \(.staleness)\nconflicts: \(.conflicts)\nnotes: \(.dispatch_notes)\n"
+   1	select(.type=="result") | .result | select(.line_n == 9 or .line_n == 10) | "== LINE \(.line_n) → \(.verdict | ascii_upcase)\nitems: \([.items[] | "\(.id) \(.status) badly=\(.has_badly) cryst=\(.crystallisation)"] | join(" · "))\nreasons: \(.reasons)\nstaleness: \(.staleness)\nconflicts: \(.conflicts)\nnotes: \(.dispatch_notes)\n"
+   1	select(.type=="result") | .agentId
+   1	select(.type=="result") | .result | select(test("aboyeur|conductor"; "i")) | .[0:5200]
+   1	select(.type=="result") | .result | select(test("aboyeur|conductor"; "i")) | .[5200:8000]
+   1	select(.type=="result") | .result | select(test("Funnel|hujson|tailscale"; "i")) | .[0:3000]
+   1	select(.type=="result") | .result | select(test("elision|OKF|Parf"; "i")) | .[0:3400]
+   1	select(.type=="result") | .result | select(test("OKF"; "i")) | .[3400:7200]
+   1	select(.type=="attachment" and .attachment.type=="hook_success") | {event: .attachment.hookEvent, name: .attachment.hookName, exit: .attachment.exitCode, stdout_len: (.attachment.stdout // "" | length)}
+   1	select(.type=="system" and .subtype=="stop_hook_summary") | [keys[]]
+   1	select(.type=="system" and .subtype=="stop_hook_summary") | del(.uuid,.parentUuid,.sessionId,.cwd,.gitBranch,.version,.userType,.entrypoint,.slug,.isSidechain,.timestamp)
+   1	select(.type=="system" and .subtype=="stop_hook_summary") | "\(.timestamp[11:19]) prevented=\(.preventedContinuation) hasOutput=\(.hasOutput) errors=\((.hookErrors // []) | length)"
+   1	select(.type=="system" and .subtype=="stop_hook_summary") | .preventedContinuation
+   1	select(.type=="system" and .subtype=="stop_hook_summary") | (.hookErrors // []) | length
+   1	select(.type=="system" and .subtype=="stop_hook_summary") | (.hookAdditionalContext // "NULL") | if type=="string" then .[0:80] else tostring[0:80] end
+   1	select(.type=="system" and .subtype=="stop_hook_summary") | select((.hookErrors // []) | length > 0) | {ts: .timestamp, prevented: .preventedContinuation, stopReason: (.stopReason // "none"), errLen: (.hookErrors[0] | tostring | length), errHead: (.hookErrors[0] | tostring | .[0:200])}
+   1	select(.type=="assistant" and .message.model=="claude-opus-5") | [.message.content[]? | select(.type=="text") | .text] | join(" ") | select(length>0) | .[0:220]
+   1	select(.type=="assistant" and .message.model=="claude-opus-5") | .requestId
+   1	select(.type=="system" and .subtype=="model_refusal_fallback") | del(.uuid,.parentUuid,.sessionId,.cwd,.gitBranch,.userType,.entrypoint,.isSidechain)
+   1	select(.type=="system" and .subtype=="model_refusal_fallback") | .apiRefusalExplanation
+   1	select(.type=="assistant" and .timestamp > "2026-08-31T04:53" and .timestamp < "2026-08-31T04:57") | [.message.content[]? | select(.type=="tool_use") | "\(.name): \((.input.description // .input.file_path // .input.command // "") | tostring | .[0:70])"] | .[]
+   1	select(.type=="assistant" and .timestamp > "2026-08-31T04:54:29.516Z" and .message.model=="claude-fable-5") | .timestamp
+   1	select(.uuid=="45d3602c-0fe7-431e-8e6c-8ca29686520c") | {type, isMeta, content_type: (.message.content | type), preview: (.message.content | tostring | .[0:300])}
