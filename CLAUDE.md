@@ -1,6 +1,6 @@
 # Deglacer
 
-Library + CLI for parsing Claude Code session JSONL files. Garde-manger, gueridon, and any future consumer import the same battle-tested parsing logic; the `deglacer` CLI exposes it for one-off introspection.
+Library + CLI for parsing Claude Code session JSONL files. The live consumers are glaneur's `glean-code` (the nightly transcript capture, via the CLI), terroir (library, git dependency) and the trousse `/deglacer` skill (Claude-facing); garde-manger was the original consumer and was decommissioned 2026-06-03. `.bon/understanding.md` carries the measured picture.
 
 ## Quick Commands
 
@@ -37,6 +37,8 @@ Everything is re-exported from `__init__.py` — consumers just `import deglacer
 - **`content.py` strips system tags BUT unwraps `<command-args>`.** Slash-command preambles get stripped entirely; the user's actual prompt text wrapped in `<command-args>` is kept (tag removed, content preserved). New tag patterns added to either path affect ALL output modes — be deliberate.
 
 ## What's new
+
+**2026-09-13 — v0.3.1: scoped search says so, listings show titles.** `--find` prints its window ("searched the 200 most-recent sessions of N; K shown") and `--since` widens it; `--recent` shows the transcript's `ai-title` instead of a blank slug column; `--version` exists; a multi-file glob gets a loop hint instead of an argparse error. The check-in that produced these also measured that 251 of 301 transcript-reading sessions since July hand-rolled jq instead of using deglacer, for forensic fields the turn-shaped `--json` doesn't expose — see dgc-mahula and understanding.md.
 
 **2026-08-28 — usage counted per request, and two ways to interrogate a session.**
 
