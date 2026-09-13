@@ -438,6 +438,18 @@ def build_index(
 
 _QUERY_TOKEN = re.compile(r'"([^"]*)"|(\S+)')
 
+# Dropped from a query when anything else remains. bm25's IDF already scores
+# these near zero; dropping them shortens the OR over a whole-sentence query
+# (the slow shape: 400-550 ms against ~100 ms for a fragment) and moved one
+# bench case from rank 17 to 13 with nothing else changing (2026-09-13, all
+# 26 cases). Inside a quoted phrase they are kept — "the pass" is a phrase.
+_STOPWORDS = frozenset(
+    "a an and are as at be been but by can could did do does for from had has "
+    "have how i if in into is it its just of on or our so that the their them "
+    "then there these they this to us was we were what when where which who "
+    "why will with would you your".split()
+)
+
 
 def build_match(query: str) -> str:
     """Turn a user query into an FTS5 MATCH expression.
@@ -445,16 +457,21 @@ def build_match(query: str) -> str:
     Every whitespace-separated word, and every double-quoted phrase, becomes
     one FTS5 string — the tokenizer then splits it, so ``mit-pca`` and
     ``25.12.5`` become adjacent-token phrases rather than syntax errors —
-    and the strings are OR-ed. FTS5 operator words (AND, OR, NOT, NEAR) are
-    quoted like everything else and so match literally.
+    and the strings are OR-ed. Bare stopwords are dropped unless the query is
+    nothing but stopwords. FTS5 operator words (AND, OR, NOT, NEAR) are quoted
+    like everything else and so match literally.
     """
-    parts = []
+    kept, dropped = [], []
     for phrase, word in _QUERY_TOKEN.findall(query):
         token = (phrase or word).strip()
         if not token:
             continue
-        parts.append('"' + token.replace('"', '""') + '"')
-    return ' OR '.join(parts)
+        quoted = '"' + token.replace('"', '""') + '"'
+        if not phrase and token.lower() in _STOPWORDS:
+            dropped.append(quoted)
+        else:
+            kept.append(quoted)
+    return ' OR '.join(kept or dropped)
 
 
 def search_index(

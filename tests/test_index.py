@@ -226,9 +226,15 @@ def test_subagent_transcripts_are_skipped(home):
 def test_build_match_quotes_every_term():
     assert dgi.build_match("marmite diet") == '"marmite" OR "diet"'
     assert dgi.build_match('"two zone" 25.12.5') == '"two zone" OR "25.12.5"'
-    assert dgi.build_match("AND OR NOT") == '"AND" OR "OR" OR "NOT"'
-    assert dgi.build_match('say "hi" there') == '"say" OR "hi" OR "there"'
+    assert dgi.build_match("NOT NEAR") == '"NOT" OR "NEAR"'      # operators match literally
+    assert dgi.build_match('say "hi" friend') == '"say" OR "hi" OR "friend"'
     assert dgi.build_match("") == ""
+
+
+def test_build_match_drops_bare_stopwords_but_never_all():
+    assert dgi.build_match("how did we flash the router") == '"flash" OR "router"'
+    assert dgi.build_match('"the pass" the') == '"the pass"'        # kept inside a phrase
+    assert dgi.build_match("the of and") == '"the" OR "of" OR "and"'  # all-stopword query still runs
 
 
 def test_identifier_with_punctuation_matches_as_phrase(home):
