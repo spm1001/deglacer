@@ -21,7 +21,10 @@ credential-shaped strings before committing; none.
 This is `dgc-mahula`'s acceptance test data. For each of the thirteen question
 shapes, the real command here is replayed against a real transcript and the
 deglacer equivalent asserted to print the **same values** — so jq, which the
-worker did not write, generates the expected answer.
+worker did not write, generates the expected answer. That replay is
+`tests/test_entries.py` (the `ORACLE` table and the three `test_oracle_*`
+tests); the transcripts are picked by rule from the machine's own corpus at
+test time and never committed, because this repo is public.
 
 **Why it lives in the repo rather than in `/tmp`.** It is the instrument that
 produced the `--entries` specification on `dgc-mahula`: the 605 `jq` programs it
