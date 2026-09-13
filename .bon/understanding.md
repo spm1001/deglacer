@@ -16,6 +16,7 @@ Ten modules, all re-exported from `__init__.py`:
 | `health` | Parse-health counters behind `--doctor` — tripwires for CC format drift |
 | `tools` | Tool-call labelling: one call becomes a groupable label plus a detail |
 | `discovery` | Session listing (`find_sessions`, `session_title`, `count_sessions`) and the recent-window search (`search_sessions`) |
+| `index` | Whole-history search: SQLite FTS5 over human + assistant text, one row per turn, ranked to session (`build_index`, `search_index`); incremental, prune-guarded, realpath root |
 | `cli` | argparse entry point; every mode is a flag, there are no subcommands |
 | `_invlog` | Vendored invocation-log shim: one caller-stamped JSONL line per run to `~/.local/share/deglacer/invocations.jsonl`. Canonical copy and conformance test live in spm1001/harness-ergonomics; never edit here |
 
@@ -44,7 +45,9 @@ Since July, 301 sessions read CC transcripts. 251 never called deglacer; they ra
 
 **deja** (github.com/vshulcz/deja-vu) was benched on 2026-08-09, routed to from the trousse skill as the ranked whole-history search, and **dropped from the estate on 2026-09-13** (Sameer's call, dgc-secise). What the measurement found: 52 invocations ever in 21 sessions, two genuine searches by a Claude in the preceding month, index last written 2026-09-02, installed build pinned at v0.16.9 against an upstream at v0.20.0 shipping every two to three days and heading toward auto-recall inside agents — the surface the adoption card had ruled out. Over the same period Claudes ran 192 cross-session `rg` searches. The recall need was real; deja was not what met it.
 
-Gone with it: the binary, the 563 MB index, the `DEJA_CLAUDE_ROOT` guards in dotfiles and the commis unit, the weekly freshness doorbell in `update-dev-tools.sh`, and the skill's routing section. Kept deliberately: `banc/session-search`, because its 13-task bench is the **acceptance oracle** for the replacement, and its `runs-v0.16.9/` baseline is the 85% recall figure to beat. The replacement is specified on dgc-puwupa — `--index` / `--search` on SQLite FTS5 over conversation text only. Until it lands, cross-session search is `rg -li -F` over the corpus, unranked, and the trousse reference says so.
+Gone with it: the binary, the 563 MB index, the `DEJA_CLAUDE_ROOT` guards in dotfiles and the commis unit, the weekly freshness doorbell in `update-dev-tools.sh`, and the skill's routing section. Kept deliberately: `banc/session-search`, because its 13-task bench is the **acceptance oracle** for the replacement. Note the two baselines there disagree: the original `runs/` has deja-short at 0.85 and deja at 0.64 (the figures the cards quote); the later `runs-v0.16.9/` re-run has 0.69 and 0.62, confounded by same-day echo salting.
+
+**The replacement landed the same day (v0.4.0, dgc-puwupa): `deglacer --index` / `--search`.** SQLite FTS5 over human + assistant text only; one row per turn, ranked to session by best-turn bm25, terms OR-ed; `~/.cache/deglacer/index.db` at 0600. Measured on the live corpus: 7,646 sessions / 5.5 GB indexed in 113 s into 208 MB; incremental re-run 0.8 s; warm search 125–480 ms. Bench, both arms in `runs-deglacer-fts/`: whole-question recall 13/13, short-fragment 12/13, hit@1 54% on both — against deja's 64% / 85% and 8–31% hit@1. The short miss is `marmite` alone, a crowded single term (the whole question ranks that session first); two other aggregation rules (sum of top three turns, sum of all) were tried across all 26 cases and did no better, so best-turn stays. **The trousse reference still routes cross-session search to `rg`** — rewriting it is a skill edit filed on trousse's board, not done here.
 
 ## The streaming dragon, and its two halves
 
@@ -76,7 +79,7 @@ The CC JSONL schema reference lives in trousse's `skills/deglacer/SKILL.md`, not
 
 **A resumed session replays its history into a new file with the original timestamps** (OtoDock's tailer found this; dgc-raveve). Usage keys on `requestId` so cost totals should survive it; every other count is unmeasured until that card runs.
 
-**Test fixtures encode what you already imagined.** The 2026-08-28 session's labelling tests were green while a sweep of 2,869 real Bash commands found five bugs. For anything that classifies, estimates or labels, the corpus sweep is the step that can surprise you; budget it as part of the work. A sweep script that pairs every Bash tool_use with its result over all 22,938 transcripts runs in about a minute and is 60 lines; rebuild it rather than trusting fixtures.
+**Test fixtures encode what you already imagined.** The 2026-08-28 session's labelling tests were green while a sweep of 2,869 real Bash commands found five bugs. For anything that classifies, estimates or labels, the corpus sweep is the step that can surprise you; budget it as part of the work. The sweep script that pairs every Bash tool_use with its result over all 22,938 transcripts runs in about a minute and is committed at `tools/sweep-tool-calls.py`, with its 605 extracted jq programs beside it in `tools/jq-programs-2026-09-13.txt` (400 distinct, with counts, credential-scanned) — that file is dgc-mahula's acceptance oracle, so use it rather than re-deriving. The same sweep re-run a month after `--entries` ships is mahula's done criterion (hand-only share of transcript-reading sessions falling from 83%); nobody has scheduled that re-run.
 
 ## Parity testing
 

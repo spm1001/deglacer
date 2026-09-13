@@ -8,8 +8,8 @@ one caller-stamped JSONL line — success and failure alike — and a broken log
 path never breaks the CLI.
 
 deglacer has no subcommands, so the log's subcommand field carries a mode
-derived in dispatch order (recent/since/find/stats/summary/timeline/markdown/
-json/text) — the derivation is the deglacer-specific part of the adoption and
+derived in dispatch order (index/search/recent/since/find/doctor/stats/summary/
+timeline/markdown/json/text) — the derivation is the deglacer-specific part of the adoption and
 gets its own assertions here.
 """
 
@@ -82,6 +82,9 @@ class TestInvocationLog:
         """One probe per mode family the dispatch distinguishes."""
         env = _env(tmp_path, CLAUDECODE="1", HOME=str(tmp_path / "home"))
         for argv, mode in [
+            (["--index"], "index"),
+            (["--search", "zz-no-match"], "search"),
+            (["--search", "zz", "--since", "2020-01-01"], "search"),   # not "since"
             (["--recent"], "recent"),
             (["--today"], "recent"),          # sugar sets recent=100
             (["--find", "zz-no-match"], "find"),
@@ -91,7 +94,8 @@ class TestInvocationLog:
         ]:
             _run(*argv, env=env)
         modes = [l["subcommand"] for l in _log_lines(tmp_path)]
-        assert modes == ["recent", "recent", "find", "summary", "json", "text"]
+        assert modes == ["index", "search", "search", "recent", "recent", "find",
+                         "summary", "json", "text"]
 
     def test_robot_stamp_without_cc_env_or_tty(self, session_file, tmp_path):
         env = _env(tmp_path)  # no CC env; stdin/stdout/stderr are pipes

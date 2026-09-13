@@ -3,19 +3,13 @@
 import json
 
 
-def parse_session(path: str, health=None) -> list[dict]:
-    """Parse a CC JSONL file into a list of entries.
+def iter_session(path: str, health=None):
+    """Yield the entries of a CC JSONL file one at a time.
 
-    Handles encoding errors gracefully and skips malformed lines.
-
-    Pass a Counter as `health` to record what was skipped on the way through —
-    lines, blank, bad_json, not_object. Skipping is the right behaviour (one
-    truncated write should not lose a whole transcript) but it is silent, and
-    silence is what lets a drifted format look like a clean parse. The counter
-    is optional so the return type never changes; `deglacer.health.assess`
-    turns it into findings.
+    The streaming form of `parse_session` — same skip rules, same optional
+    `health` counter — for readers that must not hold a 70 MB transcript in
+    memory: the search index (index.py) and anything that emits per entry.
     """
-    entries = []
     with open(path, 'r', errors='replace') as f:
         for line in f:
             if health is not None:
@@ -35,8 +29,22 @@ def parse_session(path: str, health=None) -> list[dict]:
                 if health is not None:
                     health['not_object'] += 1
                 continue
-            entries.append(entry)
-    return entries
+            yield entry
+
+
+def parse_session(path: str, health=None) -> list[dict]:
+    """Parse a CC JSONL file into a list of entries.
+
+    Handles encoding errors gracefully and skips malformed lines.
+
+    Pass a Counter as `health` to record what was skipped on the way through —
+    lines, blank, bad_json, not_object. Skipping is the right behaviour (one
+    truncated write should not lose a whole transcript) but it is silent, and
+    silence is what lets a drifted format look like a clean parse. The counter
+    is optional so the return type never changes; `deglacer.health.assess`
+    turns it into findings.
+    """
+    return list(iter_session(path, health=health))
 
 
 def is_human_message(entry: dict) -> bool:

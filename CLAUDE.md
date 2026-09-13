@@ -6,8 +6,10 @@ Library + CLI for parsing Claude Code session JSONL files. The live consumers ar
 
 ```bash
 uv run --group dev pytest                          # run tests
-uv tool install ~/Repos/batterie/deglacer --reinstall  # install/upgrade CLI
+uv tool install ~/repos/spm1001/deglacer --reinstall  # install/upgrade CLI
 deglacer --help                                    # CLI usage
+deglacer --index                                   # build/refresh the whole-history search index (~2 min cold, <1 s warm)
+deglacer --search marmite diet                     # ranked session search over it
 ```
 
 ## Module Map
@@ -22,6 +24,7 @@ deglacer --help                                    # CLI usage
 | `health` | Parse-health assessment behind `--doctor` — tripwires for CC format drift |
 | `tools` | Tool-call labelling — one call becomes a groupable label plus a detail (`normalize_tool`, `bash_command`, `tool_calls`) |
 | `discovery` | Session listing (`find_sessions`, `session_title`, `count_sessions`) and the recent-window search (`search_sessions`). Both caps are named constants and both are printed to stderr at call time — a scoped null must never read as an absence |
+| `index` | Whole-history search: SQLite FTS5 over human + assistant text only, one row per turn, ranked to session (`build_index`, `search_index`). `~/.cache/deglacer/index.db`, 0600 — it holds conversation text. Incremental on (size, mtime); a run that would prune ≥50% of the index refuses without `--force-prune`; the root is realpath-resolved so a symlinked `projects/` indexes rather than reading empty. Query terms are OR-ed and bm25-ranked; a quoted phrase is a phrase |
 | `cli` | argparse entry point — wired via `[project.scripts]` in pyproject |
 | `_invlog` | Vendored estate invocation-log shim — every CLI run appends one caller-stamped JSONL line to `~/.local/share/deglacer/invocations.jsonl`, subcommand field carrying the dispatch-order mode. Never edit here; re-vendor from canonical (spm1001/harness-ergonomics, which holds the conformance test) |
 
@@ -37,6 +40,8 @@ Everything is re-exported from `__init__.py` — consumers just `import deglacer
 - **`content.py` strips system tags BUT unwraps `<command-args>`.** Slash-command preambles get stripped entirely; the user's actual prompt text wrapped in `<command-args>` is kept (tag removed, content preserved). New tag patterns added to either path affect ALL output modes — be deliberate.
 
 ## What's new
+
+**2026-09-13 — v0.4.0: `--index` / `--search`, the native replacement for deja** (dgc-puwupa). A SQLite FTS5 index over conversation text — human and assistant turns only, never tool results or thinking — at `~/.cache/deglacer/index.db` (0600), built in 113 s over 7,646 sessions / 5.5 GB into 208 MB, refreshed in under a second, searched warm in 125–480 ms. On the 13-task `banc/session-search` bench that judged deja: whole-question recall 13/13 (deja 64%), short-fragment 12/13 (deja 85%), hit@1 54% (deja 8–31%). Also `iter_session`, the streaming twin of `parse_session`. The one bench miss is a single crowded term (`marmite`) — a short query is a guess, and the whole question found that session at rank 1.
 
 **2026-09-13 — v0.3.1: scoped search says so, listings show titles.** `--find` prints its window ("searched the 200 most-recent sessions of N; K shown") and `--since` widens it; `--recent` shows the transcript's `ai-title` instead of a blank slug column; `--version` exists; a multi-file glob gets a loop hint instead of an argparse error. The check-in that produced these also measured that 251 of 301 transcript-reading sessions since July hand-rolled jq instead of using deglacer, for forensic fields the turn-shaped `--json` doesn't expose — see dgc-mahula and understanding.md.
 
