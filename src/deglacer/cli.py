@@ -123,6 +123,10 @@ def _run_index(args) -> int:
         summary = deglacer.build_index(
             rebuild=args.rebuild, force_prune=args.force_prune, progress=progress,
         )
+    except deglacer.index.IndexBusy as busy:
+        print(f"index busy: {busy} — another `deglacer --index` is probably running; "
+              f"retry when it finishes (a refresh takes about a second).", file=sys.stderr)
+        return 1
     except deglacer.index.PruneRefused as refused:
         sample = "\n".join(f"  {p}" for p in refused.would_remove[:10])
         more = f"\n  … and {len(refused.would_remove) - 10} more" if len(refused.would_remove) > 10 else ""

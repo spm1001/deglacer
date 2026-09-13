@@ -271,6 +271,22 @@ def test_search_limit_caps_and_says_so(home):
     assert "capped" in cp.stderr
 
 
+def test_second_indexer_racing_the_first_says_busy(home):
+    """A held write lock (what a concurrent --index holds) must surface as one
+    'index busy' line and exit 1 — not a traceback, not 7,000 'skipped' lines."""
+    run_cli("--index", home=home)
+    holder = dgi.open_index(_db(home))
+    holder.execute("BEGIN IMMEDIATE")
+    try:
+        cp = run_cli("--index", home=home)      # waits out sqlite's 5 s timeout, then gives up
+    finally:
+        holder.rollback()
+        holder.close()
+    assert cp.returncode == 1
+    assert "index busy" in cp.stderr and "Traceback" not in cp.stderr
+    assert "skipped" not in cp.stderr
+
+
 def test_rebuild_starts_from_scratch(home):
     run_cli("--index", home=home)
     with dgi.open_index(_db(home)) as conn:

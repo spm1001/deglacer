@@ -111,6 +111,10 @@ class IndexMissing(Exception):
     """No index at the given path — run --index first."""
 
 
+class IndexBusy(Exception):
+    """Another writer holds the index — a second --index racing the first."""
+
+
 class PruneRefused(Exception):
     """The scan would remove too much of the index; see build_index."""
 
@@ -391,7 +395,10 @@ def build_index(
         conn.execute("PRAGMA synchronous = OFF")
         total = len(plan.to_index)
         bytes_done = 0
-        conn.execute("BEGIN")
+        # IMMEDIATE takes the write lock here, so a second --index racing this
+        # one fails at BEGIN as IndexBusy rather than as one "skipped" line per
+        # file from inside the per-file guard below.
+        conn.execute("BEGIN IMMEDIATE")
         for n, (path, size, mtime) in enumerate(plan.to_index, 1):
             try:
                 summary.turns += index_file(conn, path, size, mtime)
@@ -401,7 +408,7 @@ def build_index(
             bytes_done += size
             if n % _COMMIT_EVERY == 0:
                 conn.execute("COMMIT")
-                conn.execute("BEGIN")
+                conn.execute("BEGIN IMMEDIATE")
             if progress:
                 progress(n, total, bytes_done, plan.bytes_to_index)
 
@@ -425,6 +432,10 @@ def build_index(
         status = index_status(conn)
         summary.files_total = status['files']
         summary.turns_total = status['turns']
+    except sqlite3.OperationalError as exc:
+        if 'locked' in str(exc).lower() or 'busy' in str(exc).lower():
+            raise IndexBusy(str(db_path)) from exc
+        raise
     finally:
         conn.close()
 
