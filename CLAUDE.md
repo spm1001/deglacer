@@ -10,6 +10,7 @@ uv tool install ~/repos/spm1001/deglacer --reinstall  # install/upgrade CLI
 deglacer --help                                    # CLI usage
 deglacer --index                                   # build/refresh the whole-history search index (~2 min cold, <1 s warm)
 deglacer --search marmite diet                     # ranked session search over it
+deglacer --entries --tool Bash S.jsonl | jq '...'  # forensic view: classified entries, tool calls paired with results
 ```
 
 ## Module Map
@@ -24,6 +25,7 @@ deglacer --search marmite diet                     # ranked session search over 
 | `health` | Parse-health assessment behind `--doctor` — tripwires for CC format drift |
 | `tools` | Tool-call labelling — one call becomes a groupable label plus a detail (`normalize_tool`, `bash_command`, `tool_calls`) |
 | `discovery` | Session listing (`find_sessions`, `session_title`, `count_sessions`) and the recent-window search (`search_sessions`). Both caps are named constants and both are printed to stderr at call time — a scoped null must never read as an absence |
+| `entries` | The forensic view: `--entries` streams one JSON line per entry with deglacer's classification in `kind` (human / tool_result / meta / assistant / system:<subtype> / attachment:<type> / raw type by name — nothing dropped) and each `tool_use` as its own row paired with its result across lines; `--kind` / `--tool` filter; `--meta` is the one-line session block. `usage` is emitted once per request (the entry `dedupe_by_request` keeps) so summing it is right; every other raw top-level key passes through flat. Acceptance test replays the corpus's real jq programs (`tools/jq-programs-2026-09-13.txt`) against real transcripts and asserts the same values |
 | `index` | Whole-history search: SQLite FTS5 over human + assistant text only, one row per turn, ranked to session (`build_index`, `search_index`). `~/.cache/deglacer/index.db`, 0600 — it holds conversation text. Incremental on (size, mtime); a run that would prune ≥50% of the index refuses without `--force-prune`; the root is realpath-resolved so a symlinked `projects/` indexes rather than reading empty. Query terms are OR-ed and bm25-ranked; a quoted phrase is a phrase |
 | `cli` | argparse entry point — wired via `[project.scripts]` in pyproject |
 | `_invlog` | Vendored estate invocation-log shim — every CLI run appends one caller-stamped JSONL line to `~/.local/share/deglacer/invocations.jsonl`, subcommand field carrying the dispatch-order mode. Never edit here; re-vendor from canonical (spm1001/harness-ergonomics, which holds the conformance test) |
@@ -40,6 +42,8 @@ Everything is re-exported from `__init__.py` — consumers just `import deglacer
 - **`content.py` strips system tags BUT unwraps `<command-args>`.** Slash-command preambles get stripped entirely; the user's actual prompt text wrapped in `<command-args>` is kept (tag removed, content preserved). New tag patterns added to either path affect ALL output modes — be deliberate.
 
 ## What's new
+
+**2026-09-13 — v0.5.0: `--entries` / `--meta`, the forensic view** (dgc-mahula). One JSON line per entry, streaming, classified (`kind`), with every `tool_use` paired to its `tool_result` across lines and `usage` once per request; `--kind K` (repeatable, `system` keeps all `system:*`), `--tool NAME`; `--meta FILE` for the session block. Built from the 605 jq programs Claudes hand-rolled since July, and tested by replaying those programs against two real transcripts (oldest and newest that clear a richness bar, picked by rule at test time) and asserting the same values. Two things the oracle taught: **a `requestId` spans a tool round-trip when tools run in parallel** — CC writes block 0, runs it, writes its result, then writes block 1's entry (`apiBlockIndex` orders them), so grouping a request by contiguity emits its usage twice; and current CC stamps `origin.kind` / `promptSource` on string-content user entries (`human`/`typed` vs `task-notification`/`system`), which `is_human_message` does not read yet (see dgc-zekodo).
 
 **2026-09-13 — v0.4.0: `--index` / `--search`, the native replacement for deja** (dgc-puwupa). A SQLite FTS5 index over conversation text — human and assistant turns only, never tool results or thinking — at `~/.cache/deglacer/index.db` (0600), built in 113 s over 7,646 sessions / 5.5 GB into 208 MB, refreshed in under a second, searched warm in 125–480 ms. On the 13-task `banc/session-search` bench that judged deja: whole-question recall 13/13 (deja 64%), short-fragment 12/13 (deja 85%), hit@1 54% (deja 8–31%). Also `iter_session`, the streaming twin of `parse_session`. The one bench miss is a single crowded term (`marmite`) — a short query is a guess, and the whole question found that session at rank 1.
 

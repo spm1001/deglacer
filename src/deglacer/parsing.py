@@ -3,15 +3,17 @@
 import json
 
 
-def iter_session(path: str, health=None):
+def iter_session(path: str, health=None, numbered: bool = False):
     """Yield the entries of a CC JSONL file one at a time.
 
     The streaming form of `parse_session` — same skip rules, same optional
     `health` counter — for readers that must not hold a 70 MB transcript in
     memory: the search index (index.py) and anything that emits per entry.
+    With ``numbered=True`` yields ``(line_number, entry)`` pairs, 1-based and
+    counting every physical line, so a reader can name the raw line.
     """
     with open(path, 'r', errors='replace') as f:
-        for line in f:
+        for lineno, line in enumerate(f, 1):
             if health is not None:
                 health['lines'] += 1
             line = line.strip()
@@ -29,7 +31,7 @@ def iter_session(path: str, health=None):
                 if health is not None:
                     health['not_object'] += 1
                 continue
-            yield entry
+            yield (lineno, entry) if numbered else entry
 
 
 def parse_session(path: str, health=None) -> list[dict]:

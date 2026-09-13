@@ -88,6 +88,8 @@ class TestInvocationLog:
             (["--recent"], "recent"),
             (["--today"], "recent"),          # sugar sets recent=100
             (["--find", "zz-no-match"], "find"),
+            (["--entries", str(session_file)], "entries"),
+            (["--meta", str(session_file)], "meta"),
             (["--summary", str(session_file)], "summary"),
             (["--json", str(session_file)], "json"),
             ([str(session_file)], "text"),
@@ -95,7 +97,7 @@ class TestInvocationLog:
             _run(*argv, env=env)
         modes = [l["subcommand"] for l in _log_lines(tmp_path)]
         assert modes == ["index", "search", "search", "recent", "recent", "find",
-                         "summary", "json", "text"]
+                         "entries", "meta", "summary", "json", "text"]
 
     def test_robot_stamp_without_cc_env_or_tty(self, session_file, tmp_path):
         env = _env(tmp_path)  # no CC env; stdin/stdout/stderr are pipes

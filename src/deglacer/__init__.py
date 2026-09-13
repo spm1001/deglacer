@@ -22,6 +22,8 @@ from deglacer.discovery import find_sessions, search_sessions, count_sessions, s
 from deglacer.markdown import format_markdown
 from deglacer import index
 from deglacer.index import build_index, search_index, default_index_path
+from deglacer import entries
+from deglacer.entries import iter_entries, format_entries, session_meta, classify
 
 __all__ = [
     "parse_session",
@@ -29,6 +31,10 @@ __all__ = [
     "build_index",
     "search_index",
     "default_index_path",
+    "iter_entries",
+    "format_entries",
+    "session_meta",
+    "classify",
     "is_human_message",
     "is_tool_result",
     "is_meta",

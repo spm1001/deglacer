@@ -12,6 +12,9 @@ Usage:
     deglacer --stats --tools SESSION.jsonl  # + which file/command/host each call went to
     deglacer --summary SESSION.jsonl        # human messages only
     deglacer --timeline SESSION.jsonl       # timestamped turn log
+    deglacer --entries SESSION.jsonl        # one JSON line per entry, classified, tool calls paired
+    deglacer --entries --tool Bash S.jsonl  # just the Bash calls and their results
+    deglacer --meta SESSION.jsonl           # one-line session metadata block
     deglacer --find "search term"           # substring search, recent window only
     deglacer --index                        # build/refresh the whole-history search index
     deglacer --search marmite diet          # ranked search over every indexed session
@@ -61,6 +64,10 @@ def _mode(args) -> str:
         return "since"
     if args.find:
         return "find"
+    if args.entries:
+        return "entries"
+    if args.meta:
+        return "meta"
     if args.doctor:
         return "doctor"
     if args.stats:
@@ -231,6 +238,27 @@ def _main(inv):
         "--limit", type=int, default=deglacer.index.DEFAULT_SEARCH_LIMIT, metavar="N",
         help="With --search: sessions to show (default 20)",
     )
+    parser.add_argument(
+        "--entries", action="store_true",
+        help="One JSON line per entry, streaming, with deglacer's classification in `kind` "
+             "(human / tool_result / meta / assistant / system:<subtype> / attachment:<type> / raw type) "
+             "and each tool_use as its own line paired with its result. `i` is the raw line number; "
+             "`usage` appears once per request so summing it is correct; every other top-level key "
+             "passes through flat. Pipe to jq.",
+    )
+    parser.add_argument(
+        "--kind", action="append", metavar="KIND",
+        help="With --entries: keep only this kind (repeatable; `system` keeps every system:*)",
+    )
+    parser.add_argument(
+        "--tool", metavar="NAME",
+        help="With --entries: keep only tool_use and tool_result rows for this tool",
+    )
+    parser.add_argument(
+        "--meta", action="store_true",
+        help="One JSON object describing the session: identity, cwd, branch, versions, "
+             "models, span, and a census of kinds and tools",
+    )
 
     args = parser.parse_args()
 
@@ -308,6 +336,21 @@ def _main(inv):
     if not os.path.exists(args.file):
         print(f"File not found: {args.file}", file=sys.stderr)
         sys.exit(1)
+
+    # --entries and --meta stream the file themselves; they never load it whole.
+    if args.entries or args.meta:
+        try:
+            if args.entries:
+                for line in deglacer.format_entries(args.file, kinds=args.kind, tool=args.tool):
+                    print(line)
+            else:
+                import json
+                print(json.dumps(deglacer.session_meta(args.file), ensure_ascii=False))
+        except BrokenPipeError:
+            # `deglacer --entries F | head` is a normal use; leave quietly and
+            # keep the interpreter's exit flush from raising a second time.
+            os.dup2(os.open(os.devnull, os.O_WRONLY), sys.stdout.fileno())
+        return
 
     health = deglacer.new_health()
     entries = deglacer.parse_session(args.file, health=health)
