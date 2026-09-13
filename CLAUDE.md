@@ -21,7 +21,7 @@ deglacer --help                                    # CLI usage
 | `stats` | Token/model/tool counting, timeline, summary |
 | `health` | Parse-health assessment behind `--doctor` — tripwires for CC format drift |
 | `tools` | Tool-call labelling — one call becomes a groupable label plus a detail (`normalize_tool`, `bash_command`, `tool_calls`) |
-| `discovery` | Session file finding and cross-session search |
+| `discovery` | Session listing (`find_sessions`, `session_title`, `count_sessions`) and the recent-window search (`search_sessions`). Both caps are named constants and both are printed to stderr at call time — a scoped null must never read as an absence |
 | `cli` | argparse entry point — wired via `[project.scripts]` in pyproject |
 | `_invlog` | Vendored estate invocation-log shim — every CLI run appends one caller-stamped JSONL line to `~/.local/share/deglacer/invocations.jsonl`, subcommand field carrying the dispatch-order mode. Never edit here; re-vendor from canonical (spm1001/harness-ergonomics, which holds the conformance test) |
 
