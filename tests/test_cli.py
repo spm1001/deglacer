@@ -171,3 +171,70 @@ def test_find_no_match_exits_one(fake_home):
     cp = run_cli("--find", "xyzzy-not-in-any-session", home=fake_home)
     assert cp.returncode == 1
     assert "No matches" in cp.stderr
+
+
+# -- 2026-09-13 check-in fixes: --version, scope line, multi-file, titles --
+
+def test_version_flag():
+    cp = run_cli("--version")
+    assert cp.returncode == 0
+    assert cp.stdout.startswith("deglacer ")
+
+
+def test_multi_file_refuses_with_loop_hint(session_file, tmp_path):
+    second = tmp_path / "second.jsonl"
+    shutil.copy(session_file, second)
+    cp = run_cli(str(session_file), str(second))
+    assert cp.returncode == 2
+    assert "one session file per run; got 2" in cp.stderr
+    assert "for f in" in cp.stderr
+
+
+def test_find_prints_scope_on_match(fake_home):
+    cp = run_cli("--find", "deglacer", home=fake_home)
+    assert cp.returncode == 0
+    assert "searched the 1 most-recent sessions of 1; 1 shown" in cp.stderr
+
+
+def test_find_prints_scope_on_no_match(fake_home):
+    cp = run_cli("--find", "xyzzy-not-in-any-session", home=fake_home)
+    assert cp.returncode == 1
+    assert "most-recent sessions of 1" in cp.stderr
+    assert "--since" in cp.stderr
+
+
+def test_find_since_widens_to_every_session(fake_home):
+    cp = run_cli("--find", "deglacer", "--since", "2020-01-01", home=fake_home)
+    assert cp.returncode == 0
+    assert "every session since 2020-01-01" in cp.stderr
+
+
+def _append_line(path, obj):
+    with open(path, "a") as f:
+        f.write(json.dumps(obj) + "\n")
+
+
+def test_recent_shows_ai_title(fake_home):
+    f = fake_home / ".claude" / "projects" / "-tmp-testproj" / "abc123.jsonl"
+    _append_line(f, {"type": "last-prompt", "lastPrompt": "older prompt", "sessionId": "x"})
+    _append_line(f, {"type": "ai-title", "aiTitle": "Streaming dragon hunt", "sessionId": "x"})
+    cp = run_cli("--recent", home=fake_home)
+    assert "Streaming dragon hunt" in cp.stdout
+
+
+def test_recent_falls_back_to_last_prompt(fake_home):
+    f = fake_home / ".claude" / "projects" / "-tmp-testproj" / "abc123.jsonl"
+    _append_line(f, {"type": "last-prompt", "lastPrompt": "Read the\n  marmite args", "sessionId": "x"})
+    cp = run_cli("--recent", home=fake_home)
+    assert "Read the marmite args" in cp.stdout
+
+
+def test_recent_placeholder_when_untitled(fake_home):
+    # The fixture carries a slug, which is a legitimate fallback; strip it so
+    # the session has no name at all and the placeholder must fire.
+    f = fake_home / ".claude" / "projects" / "-tmp-testproj" / "abc123.jsonl"
+    lines = f.read_text().splitlines()
+    first = json.loads(lines[0]); first.pop("slug", None)
+    f.write_text("\n".join([json.dumps(first), *lines[1:]]) + "\n")
+    cp = run_cli("--recent", home=fake_home)
+    assert "(no title)" in cp.stdout

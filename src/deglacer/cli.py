@@ -70,12 +70,31 @@ def _mode(args) -> str:
     return "text"
 
 
+def _print_session_list(sessions):
+    """One line per session: mtime, size, id prefix, title, path.
+
+    The title column carries the transcript's ai-title (what /resume shows),
+    falling back to its last prompt; a session with neither prints
+    ``(no title)`` — the old slug column was blank on every current session
+    (dgc-lubeku).
+    """
+    for s in sessions:
+        mtime = datetime.fromtimestamp(s["mtime"]).strftime("%Y-%m-%d %H:%M")
+        size_kb = s["size"] / 1024
+        title = s.get("title") or s.get("slug") or "(no title)"
+        sid = s.get("sessionId", "")[:8]
+        print(f'{mtime}  {size_kb:8.0f}K  {sid}  {title[:40]:40s}  {s["path"]}')
+
+
 def _main(inv):
     parser = argparse.ArgumentParser(
         prog="deglacer",
         description="Extract conversation from Claude Code session JSONL files.",
     )
-    parser.add_argument("file", nargs="?", help="Session JSONL file path")
+    parser.add_argument("file", nargs="*", help="Session JSONL file path (one file per run)")
+    parser.add_argument(
+        "--version", action="version", version=f"deglacer {deglacer.__version__}",
+    )
     parser.add_argument("--with-tools", action="store_true", help="Include tool calls")
     parser.add_argument("--with-thinking", action="store_true", help="Include thinking blocks")
     parser.add_argument("--last", type=int, metavar="N", help="Last N turns only")
@@ -103,6 +122,19 @@ def _main(inv):
 
     args = parser.parse_args()
 
+    # A glob that matched several files is the commonest way to arrive here
+    # (measured: the one --markdown error in the corpus, 2026-05-16). Refuse
+    # with the loop the caller wanted rather than argparse's bare "unrecognized
+    # arguments", which reads as a broken flag.
+    if len(args.file) > 1:
+        print(
+            f"deglacer reads one session file per run; got {len(args.file)}.\n"
+            f"  for f in <glob>; do deglacer <flags> \"$f\"; done",
+            file=sys.stderr,
+        )
+        sys.exit(2)
+    args.file = args.file[0] if args.file else None
+
     # --today is sugar for --since today
     if args.today:
         args.since = datetime.now().strftime("%Y-%m-%d")
@@ -115,38 +147,39 @@ def _main(inv):
 
     # List recent sessions
     if args.recent is not None:
-        sessions = deglacer.find_sessions(limit=args.recent, since=args.since)
-        for s in sessions:
-            mtime = datetime.fromtimestamp(s["mtime"]).strftime("%Y-%m-%d %H:%M")
-            size_kb = s["size"] / 1024
-            slug = s.get("slug", "")
-            sid = s.get("sessionId", "")[:8]
-            print(f'{mtime}  {size_kb:8.0f}K  {sid}  {slug:30s}  {s["path"]}')
+        _print_session_list(deglacer.find_sessions(limit=args.recent, since=args.since))
         return
 
     # --since without --recent: list sessions since date
     if args.since and args.recent is None and not args.find and not args.file:
-        sessions = deglacer.find_sessions(limit=0, since=args.since)
-        for s in sessions:
-            mtime = datetime.fromtimestamp(s["mtime"]).strftime("%Y-%m-%d %H:%M")
-            size_kb = s["size"] / 1024
-            slug = s.get("slug", "")
-            sid = s.get("sessionId", "")[:8]
-            print(f'{mtime}  {size_kb:8.0f}K  {sid}  {slug:30s}  {s["path"]}')
+        _print_session_list(deglacer.find_sessions(limit=0, since=args.since))
         return
 
     # Search across sessions
     if args.find:
-        results = deglacer.search_sessions(args.find)
+        # --since widens the window to every session since that date; without
+        # it the scan is the DEFAULT_SEARCH_WINDOW most-recent files. Either
+        # way the scope is printed, because an empty result from a scoped
+        # scan is not "never discussed" (dgc-nidobe).
+        window = 0 if args.since else deglacer.discovery.DEFAULT_SEARCH_WINDOW
+        limit = deglacer.discovery.DEFAULT_SEARCH_LIMIT
+        results = deglacer.search_sessions(args.find, limit=limit, window=window, since=args.since)
+        total = deglacer.discovery.count_sessions()
+        scope = (f"every session since {args.since}" if args.since
+                 else f"the {min(window, total)} most-recent sessions of {total}")
         if not results:
-            print(f'No matches for "{args.find}"', file=sys.stderr)
+            print(f'No matches for "{args.find}" in {scope} — '
+                  f'widen with --since DATE before reading this as never discussed',
+                  file=sys.stderr)
             sys.exit(1)
         for r in results:
-            slug = r.get("slug", "")
+            title = r.get("title") or r.get("slug") or ""
             sid = r.get("sessionId", "")[:8]
             match = r["match"].replace("\n", " ")[:100]
-            print(f'{sid}  {slug:25s}  "{match}"')
+            print(f'{sid}  {title[:25]:25s}  "{match}"')
             print(f'  {r["file"]}')
+        capped = " (capped — narrow the term or add --since)" if len(results) >= limit else ""
+        print(f"searched {scope}; {len(results)} shown{capped}", file=sys.stderr)
         return
 
     # Need a file for everything else

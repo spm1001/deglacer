@@ -17,7 +17,8 @@ from deglacer.tools import normalize_tool, bash_command, tool_calls
 from deglacer.content import extract_human_text, extract_assistant_content
 from deglacer.conversation import merge_assistant_entries, build_turns, format_text, format_json
 from deglacer.stats import format_stats, format_timeline, format_summary
-from deglacer.discovery import find_sessions, search_sessions
+from deglacer import discovery
+from deglacer.discovery import find_sessions, search_sessions, count_sessions, session_title
 from deglacer.markdown import format_markdown
 
 __all__ = [
@@ -46,4 +47,6 @@ __all__ = [
     "format_markdown",
     "find_sessions",
     "search_sessions",
+    "count_sessions",
+    "session_title",
 ]
